@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/httplog"
 	"github.com/wisdom-oss/common-go/middleware"
 
-	"microservice/globals"
+	"user-management/globals"
 )
 
 // This file contains default paths that are used inside the service to load

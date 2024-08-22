@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/httplog"
 	"github.com/wisdom-oss/common-go/middleware"
 
-	"microservice/globals"
+	"user-management/globals"
 )
 
 // This file contains default paths that are used inside the service to load
@@ -44,7 +44,7 @@ const QueryFilePath = "./queries.sql"
 
 // ListenAddress sets the host on which the microservice listens to incoming
 // requests
-const ListenAddress = ""
+const ListenAddress = "0.0.0.0"
 
 func httpLogger() func(next http.Handler) http.Handler {
 	l := httplog.NewLogger(globals.ServiceName)
