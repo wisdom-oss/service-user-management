@@ -12,8 +12,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
 
-	"microservice/config"
-	"microservice/globals"
+	"user-management/config"
+	"user-management/globals"
 
 	_ "github.com/wisdom-oss/go-healthcheck/client"
 )
@@ -99,4 +99,9 @@ func loadPreparedQueries() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load prepared queries")
 	}
+}
+
+func prepareJWK() {
+	log.Info().Msg("preparing JSON Web Key")
+
 }

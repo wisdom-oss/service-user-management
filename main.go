@@ -15,10 +15,10 @@ import (
 	"github.com/wisdom-oss/common-go/types"
 	healthcheckServer "github.com/wisdom-oss/go-healthcheck/server"
 
-	"microservice/config"
-	"microservice/routes"
+	"user-management/config"
+	"user-management/routes"
 
-	"microservice/globals"
+	"user-management/globals"
 )
 
 // the main function bootstraps the http server and handlers used for this
