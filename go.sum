@@ -98,8 +98,8 @@ github.com/thanhpk/randstr v1.0.6 h1:psAOktJFD4vV9NEVb3qkhRSMvYh4ORRaj1+w/hn4B+o
 github.com/thanhpk/randstr v1.0.6/go.mod h1:M/H2P1eNLZzlDwAzpkkkUvoyNNMbzRGhESZuEQk3r0U=
 github.com/ugorji/go/codec v1.2.7 h1:YPXUKf7fYbp/y8xloBqZOw2qaVggbfwMlI8WM3wZUJ0=
 github.com/ugorji/go/codec v1.2.7/go.mod h1:WGN1fab3R1fzQlVQTkfxVtIBhWDRqOviHU95kRgeqEY=
-github.com/wisdom-oss/common-go v1.0.2 h1:n7U1JVsCJHePWUjU0F2J1OT7+/H67EeUuKEck5v+AAg=
-github.com/wisdom-oss/common-go v1.0.2/go.mod h1:+iqZjlXP0jrV69ATvpc18HlMXFycENsbi6ZbRD73VLI=
+github.com/wisdom-oss/common-go v1.0.4 h1:EvGaUOwoNDNRSnI0Us9b0Y6G/E4S80Twmx5rjWmdWTw=
+github.com/wisdom-oss/common-go v1.0.4/go.mod h1:kw3ydbhhNPECHTIAd/vfnuMbLES5bn9xWAnr4jdMlVA=
 github.com/wisdom-oss/go-healthcheck v1.0.2 h1:GB6XFXo1mO9GDcQwXrK6edH9x1qGxZB0JcL4y+tSYh4=
 github.com/wisdom-oss/go-healthcheck v1.0.2/go.mod h1:H2bLbrxhptz7EuK3SaW4HPVW7VF9C+UTeeWs7aLB5GE=
 golang.org/x/crypto v0.25.0 h1:ypSNr+bnYL2YhwoMt2zPxHFmbAN1KZs/njMG3hxUp30=
