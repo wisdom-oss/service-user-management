@@ -9,11 +9,8 @@
 package config
 
 import (
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/wisdom-oss/common-go/v2/middleware"
 )
 import "github.com/gin-contrib/logger"
@@ -42,14 +39,5 @@ func Middlewares() []gin.HandlerFunc {
 	middlewares = append(middlewares, middleware.ErrorHandler{}.Gin)
 	middlewares = append(middlewares, gin.CustomRecovery(middleware.RecoveryHandler))
 
-	// read the OpenID Connect issuer from the environment
-	oidcIssuer := os.Getenv("OIDC_AUTHORITY")
-	jwtValidator := middleware.JWTValidator{}
-	err := jwtValidator.DiscoverAndConfigure(oidcIssuer)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to discover and configure JWT Validation")
-	}
-
-	middlewares = append(middlewares, jwtValidator.GinHandler)
 	return middlewares
 }
