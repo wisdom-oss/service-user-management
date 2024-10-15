@@ -1,30 +1,21 @@
 package routes
 
 import (
-	"context"
 	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
-	"github.com/qustavo/dotsql"
+	"github.com/gin-gonic/gin"
+	_ "github.com/joho/godotenv/autoload"
 	validator "openapi.tanna.dev/go/validator/openapi3"
 
-	"microservice/globals"
+	_ "microservice/internal/db"
 )
 
 var contract *openapi3.T
 
 func TestMain(m *testing.M) {
-	// load the variables found in the .env file into the process environment
-	godotenv.Load()
-
-	globals.Db, _ = pgxpool.New(context.Background(), "")
-	globals.SqlQueries, _ = dotsql.LoadFromFile("./resources/queries.sql")
-
 	var err error
 	contract, err = openapi3.NewLoader().LoadFromFile("./openapi.yaml")
 	if err != nil {
@@ -34,8 +25,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestBasicHandler(t *testing.T) {
-	router := chi.NewRouter()
-	router.Get("/", BasicHandler)
+	router := gin.New()
+	router.GET("/", BasicHandler)
 
 	request := httptest.NewRequest("GET", "/", nil)
 	responseRecorder := httptest.NewRecorder()

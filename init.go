@@ -1,19 +1,15 @@
 package main
 
 import (
-	"context"
 	"os"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/joho/godotenv/autoload"
 
-	"github.com/qustavo/dotsql"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
 
-	"user-management/config"
-	"user-management/globals"
+	_ "microservice/internal/db" // side effect import to connect to the database and parse the sql queries from it's embed
 
 	_ "github.com/wisdom-oss/go-healthcheck/client"
 )
@@ -22,9 +18,6 @@ import (
 // before main
 func init() {
 	configureLogger()
-	connectDatabase()
-	loadPreparedQueries()
-	log.Info().Msg("initialization process finished")
 }
 
 // configureLogger handles the configuration of the logger used in the
@@ -59,49 +52,4 @@ func configureLogger() {
 	}
 	// since now a logging level is set, configure the logger
 	zerolog.SetGlobalLevel(loggingLevel)
-}
-
-// connectDatabase uses the previously read environment variables to connect the
-// microservice to the PostgreSQL database used as the backend for all WISdoM
-// services
-func connectDatabase() {
-	log.Info().Msg("connecting to the database")
-
-	var err error
-	globals.Db, err = pgxpool.New(context.Background(), "")
-	if err != nil {
-		log.Fatal().Err(err).Msg("unable to create database connection pool")
-	}
-	err = globals.Db.Ping(context.Background())
-	if err != nil {
-		log.Fatal().Err(err).Msg("unable to verify the connection to the database")
-	}
-	log.Info().Msg("database connection established")
-}
-
-// loadPreparedQueries loads the prepared SQL queries from a file specified by
-// the QUERY_FILE_LOCATION environment variable or the config.QueryFilePath
-// constant.
-// It initializes the globals.SqlQueries variable with the loaded queries.
-// If there is an error loading the queries, it logs a fatal error and the
-// program terminates.
-// This function is typically called during the startup of the microservice.
-func loadPreparedQueries() {
-	log.Info().Msg("loading prepared sql queries")
-	var err error
-	location, locationChanged := os.LookupEnv("QUERY_FILE_LOCATION")
-	if !locationChanged {
-		// since the location has not changed, set the default value
-		location = config.QueryFilePath
-		log.Debug().Str("default", config.QueryFilePath).Msg("location for sql query file has not been changed")
-	}
-	globals.SqlQueries, err = dotsql.LoadFromFile(location)
-	if err != nil {
-		log.Fatal().Err(err).Msg("failed to load prepared queries")
-	}
-}
-
-func prepareJWK() {
-	log.Info().Msg("preparing JSON Web Key")
-
 }

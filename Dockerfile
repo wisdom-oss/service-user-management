@@ -3,11 +3,10 @@ COPY . /tmp/src
 WORKDIR /tmp/src
 RUN mkdir -p /tmp/build
 RUN go mod download
-RUN go build -tags docker -o /tmp/build/app
+RUN go build -tags docker,jsoniter -o /tmp/build/app
 
 FROM docker.io/alpine:latest
 COPY --from=build-service /tmp/build/app /service
-COPY resources/* /
 ENTRYPOINT ["/service"]
 ARG GH_REPO=unset
 ARG GH_VERSION=unset

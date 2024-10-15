@@ -1,7 +1,7 @@
 name: Create/Release Docker Image
 on:
   push:
-    branches: [ "main", "stable", "dev" ]
+    branches: [ "main", "dev" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
   pull_request:

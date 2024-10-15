@@ -2,37 +2,33 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
-	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/httplog"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	wisdomMiddleware "github.com/wisdom-oss/common-go/middleware"
-	"github.com/wisdom-oss/common-go/types"
 	healthcheckServer "github.com/wisdom-oss/go-healthcheck/server"
 
-	"user-management/config"
-	"user-management/routes"
-
-	"user-management/globals"
+	"microservice/internal"
+	"microservice/internal/config"
+	"microservice/internal/db"
+	"microservice/internal/errors"
+	"microservice/routes"
 )
 
 // the main function bootstraps the http server and handlers used for this
 // microservice
 func main() {
 	// create a new logger for the main function
-	l := log.With().Str("step", "main").Logger()
-	l.Info().Msgf("starting %s service", globals.ServiceName)
+	l := log.Logger
+	l.Info().Msgf("configuring %s service", internal.ServiceName)
 
 	// create the healthcheck server
 	hcServer := healthcheckServer.HealthcheckServer{}
 	hcServer.InitWithFunc(func() error {
 		// test if the database is reachable
-		return globals.Db.Ping(context.Background())
+		return db.Pool.Ping(context.Background())
 	})
 	err := hcServer.Start()
 	if err != nil {
@@ -40,33 +36,25 @@ func main() {
 	}
 	go hcServer.Run()
 
-	// create a new router
-	router := chi.NewRouter()
-	// add some middlewares to the router to allow identifying requests
-	router.Use(httplog.Handler(l))
-	router.Use(config.Middlewares()...)
-	router.NotFound(wisdomMiddleware.NotFoundError)
-	// now mount the routes as some examples
-	router.HandleFunc("/", routes.BasicHandler)
-	router.HandleFunc("/internal-error", routes.BasicWithErrorHandling)
-	router.With(wisdomMiddleware.RequireScope(globals.ServiceName, types.ScopeRead)).HandleFunc("/read", routes.BasicHandler)
-	router.With(wisdomMiddleware.RequireScope(globals.ServiceName, types.ScopeWrite)).HandleFunc("/write", routes.BasicHandler)
-	router.With(wisdomMiddleware.RequireScope(globals.ServiceName, types.ScopeDelete)).HandleFunc("/delete", routes.BasicHandler)
-	router.With(wisdomMiddleware.RequireScope(globals.ServiceName, types.ScopeAdmin)).HandleFunc("/admin", routes.BasicHandler)
+	/* NEW HTTP BACKEND */
+	r := gin.New()
+	r.HandleMethodNotAllowed = true
+	r.Use(config.Middlewares()...)
+	r.NoMethod(func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusMethodNotAllowed, errors.MethodNotAllowed)
+	})
+	r.NoRoute(func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusNotFound, errors.NotFound)
 
-	// now boot up the service
-	// Configure the HTTP server
-	server := &http.Server{
-		Addr:         fmt.Sprintf("0.0.0.0:%s", "8000"),
-		WriteTimeout: time.Second * 600,
-		ReadTimeout:  time.Second * 600,
-		IdleTimeout:  time.Second * 600,
-		Handler:      router,
-	}
+	})
+	r.GET("/", routes.BasicHandler)
+
+	l.Info().Msg("finished service configuration")
+	l.Info().Msg("starting http server")
 
 	// Start the server and log errors that happen while running it
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
+		if err := r.Run(config.ListenAddress); err != nil {
 			l.Fatal().Err(err).Msg("An error occurred while starting the http server")
 		}
 	}()
