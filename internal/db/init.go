@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 
+	"github.com/dgraph-io/badger/v4"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/qustavo/dotsql"
 	"github.com/rs/zerolog/log"
@@ -47,4 +48,6 @@ func init() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load prepared queries")
 	}
+
+	StateDB, err = badger.Open(badger.DefaultOptions(".states.db"))
 }
