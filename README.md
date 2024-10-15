@@ -45,9 +45,13 @@ environment variables:
   - `OIDC_CLIENT_ID`
   - `OIDC_CLIENT_SECRET`
   - `OIDC_ISSUER`
+  - `OIDC_REDIRECT_URI` — The URI to which a request should be redirected to if it started in the frontend
 
 The required certificates are automatically generated during the initial startup
 and stored in the microservice.
 It is recommended to create a volume mount if using docker to persist the
 certificates during container recreation to ensure updates to not break already
 running sessions
+
+## Development
+To 
