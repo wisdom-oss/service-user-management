@@ -9,12 +9,14 @@ require (
 	github.com/gin-contrib/logger v1.1.2
 	github.com/gin-contrib/requestid v1.0.3
 	github.com/gin-gonic/gin v1.10.0
+	github.com/go-jose/go-jose/v4 v4.0.2
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/joho/godotenv v1.5.1
+	github.com/lestrrat-go/jwx/v2 v2.1.1
 	github.com/qustavo/dotsql v1.2.0
 	github.com/rs/zerolog v1.33.0
 	github.com/thanhpk/randstr v1.0.6
-	github.com/wisdom-oss/common-go/v2 v2.0.0
+	github.com/wisdom-oss/common-go/v2 v2.0.2
 	github.com/wisdom-oss/go-healthcheck v1.0.2
 	golang.org/x/oauth2 v0.23.0
 
@@ -32,7 +34,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.0.2 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.22.1 // indirect
@@ -55,7 +56,6 @@ require (
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.6 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
-	github.com/lestrrat-go/jwx/v2 v2.1.1 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

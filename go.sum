@@ -188,8 +188,8 @@ github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
 github.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
-github.com/wisdom-oss/common-go/v2 v2.0.0 h1:Pcw85D1w50H6Tn7IAjpA8yIL3hWA5VO+sWqZ7zMiVcQ=
-github.com/wisdom-oss/common-go/v2 v2.0.0/go.mod h1:kDQEGMxIIt5Y5TmW5wHCNRItDKG10HFllQayvzE4oOo=
+github.com/wisdom-oss/common-go/v2 v2.0.2 h1:JHStblydhU/dTKKYMrbYL6buJJ14smGfzyiueiL/yBw=
+github.com/wisdom-oss/common-go/v2 v2.0.2/go.mod h1:kDQEGMxIIt5Y5TmW5wHCNRItDKG10HFllQayvzE4oOo=
 github.com/wisdom-oss/go-healthcheck v1.0.2 h1:GB6XFXo1mO9GDcQwXrK6edH9x1qGxZB0JcL4y+tSYh4=
 github.com/wisdom-oss/go-healthcheck v1.0.2/go.mod h1:H2bLbrxhptz7EuK3SaW4HPVW7VF9C+UTeeWs7aLB5GE=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
