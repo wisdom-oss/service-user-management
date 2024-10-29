@@ -39,3 +39,7 @@
 !types/
 !internal
 !internal/**
+!interfaces/
+!oidc/
+!structs/
+!utils/

@@ -1,19 +1,30 @@
 openapi: 3.0.3
 info:
-  title: Microservice Template
-  description: Microservice Template
+  title: User Management Service
+  description: |
+    The User Management Service allows the management of external users and
+    their permissions within the WISdoM platform.
+    It uses an external OpenID Connect Provider.
   version: 1.0.0
 servers:
-  - url: 'https'
+  - url: '/api/auth/'
+    description: Default Path
+
+tags:
+  - name: Session Management
+    description: |
+      Routes in this category are used to manage sessions and allow users to
+      login and log out as well as creating long-living credentials and external
+      clients
+  - name: Permission Management
+    description: |
+      Routes in this category are used to grant or revoke access privileges for
+      individual services on a user basis
+  - name: Others
+    description: |
+      Routes in this category are used for miscellaneous tasks such as discovery
+      of resources and providing resources
 paths:
-  /:
-    get:
-      responses:
-        200:
-          description: Hello There response
-          content:
-            text/plain:
-              schema:
-                type: string
-                pattern: '^hello there$'
+  
+
   

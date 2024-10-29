@@ -5,6 +5,7 @@ go 1.23.0
 require (
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/dgraph-io/badger/v4 v4.3.1
+	github.com/georgysavva/scany/v2 v2.1.3
 	github.com/gin-contrib/logger v1.1.2
 	github.com/gin-contrib/requestid v1.0.3
 	github.com/gin-gonic/gin v1.10.0

@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/pkgerrors"
 
 	_ "microservice/internal/db" // side effect import to connect to the database and parse the sql queries from it's embed
+	"microservice/oidc"
 
 	_ "github.com/wisdom-oss/go-healthcheck/client"
 )
@@ -18,6 +19,8 @@ import (
 // before main
 func init() {
 	configureLogger()
+	validateOIDCEnvironment()
+
 }
 
 // configureLogger handles the configuration of the logger used in the
@@ -52,4 +55,32 @@ func configureLogger() {
 	}
 	// since now a logging level is set, configure the logger
 	zerolog.SetGlobalLevel(loggingLevel)
+}
+
+func validateOIDCEnvironment() {
+	clientID, isSet := os.LookupEnv("OIDC_CLIENT_ID")
+	if !isSet {
+		log.Fatal().Msg("OIDC_CLIENT_ID environment variable not set")
+	}
+
+	clientSecret, isSet := os.LookupEnv("OIDC_CLIENT_SECRET")
+	if !isSet {
+		log.Fatal().Msg("OIDC_CLIENT_SECRET environment variable not set")
+	}
+
+	issuer, isSet := os.LookupEnv("OIDC_ISSUER")
+	if !isSet {
+		log.Fatal().Msg("OIDC_ISSUER environment variable not set")
+	}
+
+	redirectUri, isSet := os.LookupEnv("OIDC_REDIRECT_URI")
+	if !isSet {
+		log.Fatal().Msg("OIDC_REDIRECT_URI environment variable not set")
+	}
+
+	err := oidc.ExternalProvider.Configure(issuer, clientID, clientSecret, redirectUri)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to configure external OIDC provider information")
+	}
+
 }

@@ -36,7 +36,6 @@ func main() {
 	}
 	go hcServer.Run()
 
-	/* NEW HTTP BACKEND */
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
 	r.Use(config.Middlewares()...)
@@ -47,7 +46,10 @@ func main() {
 		c.AbortWithStatusJSON(http.StatusNotFound, errors.NotFound)
 
 	})
-	r.GET("/", routes.BasicHandler)
+
+	r.GET("/login", routes.InitiateLogin)
+	r.GET("/callback", routes.Callback)
+	r.GET("/token", routes.Token)
 
 	l.Info().Msg("finished service configuration")
 	l.Info().Msg("starting http server")
