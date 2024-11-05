@@ -51,6 +51,13 @@ func main() {
 	r.GET("/callback", routes.Callback)
 	r.GET("/token", routes.Token)
 
+	wellKnown := r.Group("/.well-known")
+	{
+		wellKnown.GET("/jwks.json", routes.JWK)
+		wellKnown.GET("/wisdom-config.json", routes.Configuration)
+		wellKnown.GET("/openid-configuration")
+	}
+
 	l.Info().Msg("finished service configuration")
 	l.Info().Msg("starting http server")
 
