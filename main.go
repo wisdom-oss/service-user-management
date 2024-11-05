@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"github.com/wisdom-oss/common-go/v2/middleware"
+	"github.com/wisdom-oss/common-go/v2/types"
 	healthcheckServer "github.com/wisdom-oss/go-healthcheck/server"
 
 	"microservice/internal"
@@ -36,6 +38,10 @@ func main() {
 	}
 	go hcServer.Run()
 
+	// create jwt validator using localhost to get data
+	jwtValidator := middleware.JWTValidator{}
+	protect := middleware.RequireScope{}
+
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
 	r.Use(config.Middlewares()...)
@@ -54,8 +60,15 @@ func main() {
 	wellKnown := r.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", routes.JWK)
-		wellKnown.GET("/wisdom-config.json", routes.Configuration)
-		wellKnown.GET("/openid-configuration")
+	}
+
+	userManagement := r.Group("/users", jwtValidator.GinHandler, protect.Gin("user-management", types.ScopeRead))
+	{
+		// userManagement.PUT("/", protect.Gin("user-management", types.ScopeWrite)) // todo: write route to create new user
+		// userManagement.GET("/")                                                   // todo: list all users
+		userManagement.GET("/:userID", routes.UserInformation)
+		// userManagement.PATCH("/:userID", protect.Gin("user-management", types.ScopeWrite))   // todo: update user
+		// userManagement.DELETE("/:userID", protect.Gin("user-management", types.ScopeDelete)) // todo: delete user
 	}
 
 	l.Info().Msg("finished service configuration")
@@ -75,6 +88,10 @@ func main() {
 
 	// Block further code execution until the shutdown signal was received
 	l.Info().Msg("server ready to accept connections")
+
+	// configure the JWT validator here to allow it to fetch the JWKS from
+	// itself
+	err = jwtValidator.Configure("user-management", "http://localhost:8000/.well-known/jwks.json", false)
 	<-cancelSignal
 
 }
