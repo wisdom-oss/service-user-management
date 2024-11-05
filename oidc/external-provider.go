@@ -12,6 +12,7 @@ import (
 var ExternalProvider externalProvider
 var OidcProvider *oidc.Provider
 var TokenVerifier *oidc.IDTokenVerifier
+var ExternalIssuer string
 
 type externalProvider struct {
 	oauth2.Config
@@ -40,6 +41,7 @@ func (p *externalProvider) Configure(issuer string, clientID string, clientSecre
 	p.Scopes = []string{oidc.ScopeOpenID, "profile", "email"}
 
 	var err error
+	ExternalIssuer = issuer
 	OidcProvider, err = oidc.NewProvider(context.Background(), issuer)
 	if err != nil {
 		return err
