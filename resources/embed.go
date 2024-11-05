@@ -1,6 +1,8 @@
 package resources
 
-import "embed"
+import (
+	"embed"
+)
 
 //go:embed *.sql
 var QueryFiles embed.FS
