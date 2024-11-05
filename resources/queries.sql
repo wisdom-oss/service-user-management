@@ -22,5 +22,6 @@ FROM auth.services;
 -- name: get-user-permissions
 SELECT s.name, level
 FROM auth.permission_assignments
-JOIN auth.services s ON s.id = permission_assignments.service
-WHERE user_id = $1;
+         JOIN auth.services s ON s.id = permission_assignments.service
+WHERE
+    user_id = $1;
