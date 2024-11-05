@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/thanhpk/randstr"
 	"golang.org/x/oauth2"
@@ -76,7 +75,7 @@ func Token(c *gin.Context) {
 	}
 
 	serializer := jwt.NewSerializer()
-	serializer.Sign(jwt.WithKey(jwa.ES384, resources.PrivateJWK))
+	serializer.Sign(jwt.WithKey(resources.PrivateJWK.Algorithm(), resources.PrivateJWK))
 	serializedToken, err := serializer.Serialize(token)
 	if err != nil {
 		c.Abort()
@@ -153,7 +152,7 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 		return nil
 	}
 
-	user, err := utils.GetUser(idToken.Subject)
+	user, err := utils.GetUser(utils.ExternalID(idToken.Subject))
 	if err != nil {
 		if err == utils.ErrNoUser {
 			user, err = utils.CreateUser(token)
