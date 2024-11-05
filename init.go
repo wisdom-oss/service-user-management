@@ -8,6 +8,7 @@ import (
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -130,6 +131,19 @@ loadCerts:
 		log.Fatal().Err(err).Msg("unable to create jwk private key")
 	}
 
+	err = jwk.AssignKeyID(privateKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to set private key key id")
+	}
+	err = privateKey.Set(jwk.KeyUsageKey, "sig")
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to set private key usage type")
+	}
+	err = privateKey.Set(jwk.AlgorithmKey, jwa.ES256)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to set private key algorithm")
+	}
+
 	publicKey, err := jwk.PublicKeyOf(privateKey)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to parse public key")
@@ -137,5 +151,6 @@ loadCerts:
 
 	resources.PublicJWK = publicKey
 	resources.PrivateJWK = privateKey
+
 	log.Info().Msg("loaded certificates")
 }
