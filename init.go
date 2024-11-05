@@ -1,16 +1,23 @@
 package main
 
 import (
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
+	"io"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
-
+	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
 
+	"microservice/internal/config"
 	_ "microservice/internal/db" // side effect import to connect to the database and parse the sql queries from it's embed
 	"microservice/oidc"
+	"microservice/resources"
+	"microservice/utils"
 
 	_ "github.com/wisdom-oss/go-healthcheck/client"
 )
@@ -19,8 +26,8 @@ import (
 // before main
 func init() {
 	configureLogger()
+	loadCertificates()
 	validateOIDCEnvironment()
-
 }
 
 // configureLogger handles the configuration of the logger used in the
@@ -82,5 +89,53 @@ func validateOIDCEnvironment() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to configure external OIDC provider information")
 	}
+}
 
+func loadCertificates() {
+	// test if the certificates are already present
+	var tries int
+loadCerts:
+	certificateFile, err := os.Open(config.CertificateFilePath)
+	if err != nil {
+		if tries >= 3 {
+			log.Fatal().Err(err).Msg("unable to open certificate file after three tries")
+		}
+		tries++
+		if errors.Is(err, os.ErrNotExist) {
+			err = utils.GenerateCertificates()
+			if err != nil {
+				log.Fatal().Err(err).Msg("unable to generate certificates")
+			}
+			goto loadCerts
+		}
+	}
+
+	defer certificateFile.Close()
+	certificateContents, err := io.ReadAll(certificateFile)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to read certificate file")
+	}
+	privateKeyBlock, _ := pem.Decode(certificateContents)
+	if privateKeyBlock.Type != "EC PRIVATE KEY" {
+		log.Fatal().Msg("unsupported private key type")
+	}
+
+	ecdsaPrivateKey, err := x509.ParseECPrivateKey(privateKeyBlock.Bytes)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to parse ECDSA private key")
+	}
+
+	privateKey, err := jwk.FromRaw(ecdsaPrivateKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to create jwk private key")
+	}
+
+	publicKey, err := jwk.PublicKeyOf(privateKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to parse public key")
+	}
+
+	resources.PublicJWK = publicKey
+	resources.PrivateJWK = privateKey
+	log.Info().Msg("loaded certificates")
 }
