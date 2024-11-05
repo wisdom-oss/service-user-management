@@ -28,9 +28,9 @@ func GenerateCertificates() error {
 		return nil
 	}
 	_ = db.Redis.Set(context.Background(), "ums-is-generating-jwk", true, 0)
-	//defer db.Redis.Del(context.Background(), "ums-is-generating-jwk")
+	defer db.Redis.Del(context.Background(), "ums-is-generating-jwk")
 
-	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return err
 	}
