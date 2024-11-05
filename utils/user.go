@@ -12,7 +12,7 @@ import (
 
 	"microservice/internal/db"
 	oidc2 "microservice/oidc"
-	"microservice/structs"
+	"microservice/types"
 )
 
 type ExternalID string
@@ -21,7 +21,7 @@ type InternalID string
 var ErrNoUser = errors.New("no user with this id")
 
 // GetUser retrieves a User object from the database
-func GetUser[T ExternalID | InternalID](id T) (*structs.User, error) {
+func GetUser[T ExternalID | InternalID](id T) (*types.User, error) {
 	externalIDType := reflect.TypeOf(ExternalID(""))
 	internalIDType := reflect.TypeOf(InternalID(""))
 	parameterType := reflect.TypeOf(id)
@@ -42,7 +42,7 @@ func GetUser[T ExternalID | InternalID](id T) (*structs.User, error) {
 
 	}
 
-	var user structs.User
+	var user types.User
 	err = pgxscan.Get(context.Background(), db.Pool, &user, rawQuery, string(id))
 	if err != nil {
 		if pgxscan.NotFound(err) {
@@ -53,7 +53,7 @@ func GetUser[T ExternalID | InternalID](id T) (*structs.User, error) {
 	return &user, nil
 }
 
-func CreateUser(token *oauth2.Token) (*structs.User, error) {
+func CreateUser(token *oauth2.Token) (*types.User, error) {
 	req, err := http.NewRequest("GET", oidc2.OidcProvider.UserInfoEndpoint(), nil)
 	if err != nil {
 		return nil, err

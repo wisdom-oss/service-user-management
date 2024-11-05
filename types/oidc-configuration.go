@@ -1,4 +1,4 @@
-package structs
+package types
 
 type OIDCConfiguration struct {
 	ClientID       string `json:"clientID"`

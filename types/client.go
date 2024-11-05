@@ -1,4 +1,4 @@
-package structs
+package types
 
 // Client represents an external app which has been granted permanent access
 // to the WISdoM platform.

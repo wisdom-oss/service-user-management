@@ -13,7 +13,7 @@ import (
 	"microservice/internal/db"
 	"microservice/oidc"
 	"microservice/resources"
-	"microservice/structs"
+	"microservice/types"
 	"microservice/utils"
 )
 
@@ -106,7 +106,7 @@ func Token(c *gin.Context) {
 		return
 	}
 
-	res := structs.TokenResponse{
+	res := types.TokenResponse{
 		AccessToken:  string(serializedToken),
 		ExpiresIn:    int(token.Expiration().Sub(time.Now()).Seconds()),
 		TokenType:    "Bearer",
