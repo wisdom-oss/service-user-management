@@ -1,4 +1,4 @@
-package routes
+package users
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"microservice/utils"
 )
 
-func UserInformation(c *gin.Context) {
+func Information(c *gin.Context) {
 	userID := c.Param("userID")
 	if userID == "me" {
 		_userID, set := c.Get("subject")

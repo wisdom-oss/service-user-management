@@ -1,4 +1,4 @@
-package routes
+package users
 
 import (
 	"net/http"
@@ -8,10 +8,10 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"microservice/internal/db"
-	"microservice/structs"
+	"microservice/types"
 )
 
-func UserList(c *gin.Context) {
+func List(c *gin.Context) {
 	query, err := db.Queries.Raw("get-users")
 	if err != nil {
 		c.Abort()
@@ -19,7 +19,7 @@ func UserList(c *gin.Context) {
 		return
 	}
 
-	var users []structs.User
+	var users []types.User
 	err = pgxscan.Select(c, db.Pool, &users, query)
 	if err != nil {
 		if err == pgx.ErrNoRows {

@@ -17,6 +17,7 @@ import (
 	"microservice/internal/db"
 	"microservice/internal/errors"
 	"microservice/routes"
+	"microservice/routes/users"
 )
 
 // the main function bootstraps the http server and handlers used for this
@@ -65,8 +66,8 @@ func main() {
 	userManagement := r.Group("/users", jwtValidator.GinHandler, protect.Gin("user-management", types.ScopeRead))
 	{
 		// userManagement.PUT("/", protect.Gin("user-management", types.ScopeWrite)) // todo: write route to create new user
-		userManagement.GET("/", routes.UserList)
-		userManagement.GET("/:userID", routes.UserInformation)
+		userManagement.GET("/", users.List)
+		userManagement.GET("/:userID", users.Information)
 		// userManagement.PATCH("/:userID", protect.Gin("user-management", types.ScopeWrite))   // todo: update user
 		// userManagement.DELETE("/:userID", protect.Gin("user-management", types.ScopeDelete)) // todo: delete user
 	}

@@ -36,10 +36,11 @@
 # allow the following folders
 !globals/
 !routes/
+!routes/**
 !types/
 !internal
 !internal/**
 !interfaces/
 !oidc/
-!structs/
+!types/
 !utils/
