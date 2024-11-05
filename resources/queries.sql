@@ -10,6 +10,10 @@ FROM auth.users
 WHERE
     id = $1::uuid;
 
+-- name: get-users
+SELECT *
+FROM auth.users;
+
 -- name: create-user
 INSERT INTO auth.users(external_identifier, name, username, email)
 VALUES

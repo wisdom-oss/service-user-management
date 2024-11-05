@@ -65,7 +65,7 @@ func main() {
 	userManagement := r.Group("/users", jwtValidator.GinHandler, protect.Gin("user-management", types.ScopeRead))
 	{
 		// userManagement.PUT("/", protect.Gin("user-management", types.ScopeWrite)) // todo: write route to create new user
-		// userManagement.GET("/")                                                   // todo: list all users
+		userManagement.GET("/", routes.UserList)
 		userManagement.GET("/:userID", routes.UserInformation)
 		// userManagement.PATCH("/:userID", protect.Gin("user-management", types.ScopeWrite))   // todo: update user
 		// userManagement.DELETE("/:userID", protect.Gin("user-management", types.ScopeDelete)) // todo: delete user
