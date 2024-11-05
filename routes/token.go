@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgraph-io/badger/v4"
 	"github.com/gin-gonic/gin"
+	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/thanhpk/randstr"
 	"golang.org/x/oauth2"
@@ -13,6 +13,7 @@ import (
 	"microservice/interfaces"
 	"microservice/internal/db"
 	"microservice/oidc"
+	"microservice/resources"
 	"microservice/structs"
 	"microservice/utils"
 )
@@ -42,7 +43,7 @@ func Token(c *gin.Context) {
 	case "authorization_code":
 		user = exchangeAuthorizationCode(c, tokenRequest)
 	case "refresh_token":
-		user = identifyUserFromRefreshToken(c, tokenRequest)
+		//user = identifyUserFromRefreshToken(c, tokenRequest)
 	}
 
 	if user == nil {
@@ -75,7 +76,7 @@ func Token(c *gin.Context) {
 	}
 
 	serializer := jwt.NewSerializer()
-	serializer.Sign(jwt.WithInsecureNoSignature())
+	serializer.Sign(jwt.WithKey(jwa.ES384, resources.PrivateJWK))
 	serializedToken, err := serializer.Serialize(token)
 	if err != nil {
 		c.Abort()
@@ -99,7 +100,7 @@ func Token(c *gin.Context) {
 	}
 
 	// TODO: reactivate refresh token if storing and validation are successful
-	_, err = serializer.Serialize(refreshToken)
+	serializedRefreshToken, err := serializer.Serialize(refreshToken)
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
@@ -107,10 +108,10 @@ func Token(c *gin.Context) {
 	}
 
 	res := structs.TokenResponse{
-		AccessToken: string(serializedToken),
-		ExpiresIn:   int(token.Expiration().Sub(time.Now()).Seconds()),
-		TokenType:   "Bearer",
-		//RefreshToken: string(serializedRefreshToken),
+		AccessToken:  string(serializedToken),
+		ExpiresIn:    int(token.Expiration().Sub(time.Now()).Seconds()),
+		TokenType:    "Bearer",
+		RefreshToken: string(serializedRefreshToken),
 	}
 
 	c.JSON(200, res)
@@ -123,15 +124,7 @@ func checkClientCredentials(c *gin.Context, tokenRequest TokenRequest) interface
 
 func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interfaces.PermissionableObject {
 	// retrieve the verifier from the database
-	var verifier string
-	err := db.StateDB.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(tokenRequest.State))
-		_ = item.Value(func(val []byte) error {
-			verifier = string(val)
-			return nil
-		})
-		return err
-	})
+	verifier, err := db.Redis.Get(c, tokenRequest.State).Result()
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
