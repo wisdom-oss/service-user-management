@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"reflect"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/go-jose/go-jose/v4/json"
@@ -14,17 +15,35 @@ import (
 	"microservice/structs"
 )
 
+type ExternalID string
+type InternalID string
+
 var ErrNoUser = errors.New("no user with this id")
 
 // GetUser retrieves a User object from the database
-func GetUser(externalID string) (*structs.User, error) {
-	rawQuery, err := db.Queries.Raw("get-user-by-external-id")
-	if err != nil {
-		return nil, err
+func GetUser[T ExternalID | InternalID](id T) (*structs.User, error) {
+	externalIDType := reflect.TypeOf(ExternalID(""))
+	internalIDType := reflect.TypeOf(InternalID(""))
+	parameterType := reflect.TypeOf(id)
+
+	var rawQuery string
+	var err error
+	if parameterType.AssignableTo(externalIDType) {
+		rawQuery, err = db.Queries.Raw("get-user-by-external-id")
+		if err != nil {
+			return nil, err
+		}
+	}
+	if parameterType.AssignableTo(internalIDType) {
+		rawQuery, err = db.Queries.Raw("get-user-by-internal-id")
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
 	var user structs.User
-	err = pgxscan.Get(context.Background(), db.Pool, &user, rawQuery, externalID)
+	err = pgxscan.Get(context.Background(), db.Pool, &user, rawQuery, string(id))
 	if err != nil {
 		if pgxscan.NotFound(err) {
 			return nil, ErrNoUser
