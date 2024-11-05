@@ -4,6 +4,12 @@ FROM auth.users
 WHERE
     external_identifier = $1;
 
+-- name: get-user-by-internal-id
+SELECT *
+FROM auth.users
+WHERE
+    id = $1::uuid;
+
 -- name: create-user
 INSERT INTO auth.users(external_identifier, name, username, email)
 VALUES
