@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/georgysavva/scany/v2 v2.1.3
-	github.com/gin-contrib/logger v1.1.2
+	github.com/gin-contrib/logger v1.2.0
 	github.com/gin-contrib/requestid v1.0.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-jose/go-jose/v4 v4.0.2
@@ -24,7 +24,7 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/bytedance/sonic v1.12.2 // indirect
+	github.com/bytedance/sonic v1.12.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
