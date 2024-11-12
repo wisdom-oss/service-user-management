@@ -44,7 +44,7 @@ func main() {
 	jwtValidator := middleware.JWTValidator{}
 	protect := middleware.RequireScope{}
 	requireRead := protect.Gin("user-management", types.ScopeRead)
-	requireWrite := protect.Gin("user-management", types.ScopeWrite)
+	//requireWrite := protect.Gin("user-management", types.ScopeWrite)
 	requireDelete := protect.Gin("user-management", types.ScopeDelete)
 
 	r := gin.New()
