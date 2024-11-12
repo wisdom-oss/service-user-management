@@ -21,6 +21,9 @@ INSERT INTO auth.users(external_identifier, name, username, email)
 VALUES
     ($1, $2, $3, $4);
 
+-- name: delete-user
+DELETE FROM auth.users
+WHERE id = $1::uuid;
 
 -- TOKEN RELATED QUERIES --
 

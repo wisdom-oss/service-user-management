@@ -43,6 +43,9 @@ func main() {
 	// create jwt validator using localhost to get data
 	jwtValidator := middleware.JWTValidator{}
 	protect := middleware.RequireScope{}
+	requireRead := protect.Gin("user-management", types.ScopeRead)
+	requireWrite := protect.Gin("user-management", types.ScopeWrite)
+	requireDelete := protect.Gin("user-management", types.ScopeDelete)
 
 	r := gin.New()
 	r.HandleMethodNotAllowed = true
@@ -68,10 +71,9 @@ func main() {
 	userManagement := r.Group("/users", jwtValidator.GinHandler)
 	{
 		userManagement.GET("/:userID", users.Information)
-		userManagement.GET("/", protect.Gin("user-management", types.ScopeRead), users.List)
-		// userManagement.PUT("/", protect.Gin("user-management", types.ScopeWrite)) // todo: write route to create new user
+		userManagement.GET("/", requireRead, users.List)
 		// userManagement.PATCH("/:userID", protect.Gin("user-management", types.ScopeWrite))   // todo: update user
-		// userManagement.DELETE("/:userID", protect.Gin("user-management", types.ScopeDelete)) // todo: delete user
+		userManagement.DELETE("/:userID", requireDelete, users.Delete) // todo: delete user
 	}
 
 	l.Info().Msg("finished service configuration")
