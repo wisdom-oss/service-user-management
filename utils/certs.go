@@ -60,6 +60,11 @@ func GenerateCertificates() error {
 		return err
 	}
 
+	err = signingCertificateFile.Close()
+	if err != nil {
+		return err
+	}
+
 	privateEncryptionKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return err
@@ -78,11 +83,12 @@ func GenerateCertificates() error {
 	if err != nil {
 		return err
 	}
-	defer encryptionCertificateFile.Close()
 
 	err = pem.Encode(encryptionCertificateFile, &privateEncryptionBlock)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	err = encryptionCertificateFile.Close()
+	return err
 }
