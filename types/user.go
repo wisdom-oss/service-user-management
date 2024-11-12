@@ -14,8 +14,8 @@ type User struct {
 	Name               string `json:"name" db:"name"`
 	Email              string `json:"email" db:"email"`
 	Username           string `json:"username" db:"username"`
-	Disabled           bool   `json:"isDisabled" db:"disabled"`
-	Administrator      bool   `json:"isAdministrator" db:"is_admin"`
+	Disabled           bool   `json:"disabled" db:"disabled"`
+	Administrator      bool   `json:"administrator" db:"is_admin"`
 }
 
 func (u User) GetID() string {
@@ -48,4 +48,8 @@ func (u User) Permissions() map[string][]string {
 
 func (u User) IsAdministrator() bool {
 	return u.Administrator
+}
+
+func (u User) IsActive() bool {
+	return !u.Disabled
 }
