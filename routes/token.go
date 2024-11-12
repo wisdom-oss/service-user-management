@@ -65,6 +65,12 @@ func Token(c *gin.Context) {
 		return
 	}
 
+	if !user.IsActive() {
+		c.Abort()
+		errors.ErrUserDisabled.Emit(c)
+		return
+	}
+
 	var permissions []string
 	for system, scopes := range user.Permissions() {
 		for _, scope := range scopes {
