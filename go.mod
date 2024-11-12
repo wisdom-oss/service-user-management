@@ -16,7 +16,7 @@ require (
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/rs/zerolog v1.33.0
 	github.com/thanhpk/randstr v1.0.6
-	github.com/wisdom-oss/common-go/v2 v2.1.1
+	github.com/wisdom-oss/common-go/v2 v2.2.0
 	github.com/wisdom-oss/go-healthcheck v1.0.2
 	golang.org/x/oauth2 v0.23.0
 
