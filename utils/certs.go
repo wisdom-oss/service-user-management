@@ -45,11 +45,15 @@ func GenerateCertificates() error {
 	privateSigningBlock.Bytes = privateSigningKeyBytes
 
 	err = os.MkdirAll("./.certs", 0600)
-	signingCertificateFile, err := os.OpenFile(config.SigningCertificateFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
-	defer signingCertificateFile.Close()
 	if err != nil {
 		return err
 	}
+
+	signingCertificateFile, err := os.OpenFile(config.SigningCertificateFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer signingCertificateFile.Close()
 
 	err = pem.Encode(signingCertificateFile, &privateSigningBlock)
 	if err != nil {
@@ -70,12 +74,11 @@ func GenerateCertificates() error {
 	privateEncryptionBlock.Type = "EC PRIVATE KEY"
 	privateEncryptionBlock.Bytes = privateEncryptionKeyBytes
 
-	err = os.MkdirAll("./.certs", 0600)
 	encryptionCertificateFile, err := os.OpenFile(config.EncryptionCertificateFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
-	defer encryptionCertificateFile.Close()
 	if err != nil {
 		return err
 	}
+	defer encryptionCertificateFile.Close()
 
 	err = pem.Encode(encryptionCertificateFile, &privateEncryptionBlock)
 	if err != nil {

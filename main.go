@@ -100,6 +100,9 @@ func main() {
 	// configure the JWT validator here to allow it to fetch the JWKS from
 	// itself
 	err = jwtValidator.Configure("user-management", "http://localhost:8000/.well-known/jwks.json", false)
+	if err != nil {
+		l.Fatal().Err(err).Msg("An error occurred while configuring the JWT Validator")
+	}
 	<-cancelSignal
 
 }
