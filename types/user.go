@@ -53,3 +53,8 @@ func (u User) IsAdministrator() bool {
 func (u User) IsActive() bool {
 	return !u.Disabled
 }
+
+type ExtendedUser struct {
+	User
+	Permissions map[string][]string `json:"permissions"`
+}

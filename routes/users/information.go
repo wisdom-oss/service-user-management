@@ -35,6 +35,9 @@ func Information(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, user)
+	c.JSON(200, types.ExtendedUser{
+		User:        *user,
+		Permissions: user.Permissions(),
+	})
 
 }
