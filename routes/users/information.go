@@ -5,8 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wisdom-oss/common-go/v2/middleware"
-	"github.com/wisdom-oss/common-go/v2/types"
+	commonTypes "github.com/wisdom-oss/common-go/v2/types"
 
+	"microservice/types"
 	"microservice/utils"
 )
 
@@ -23,11 +24,11 @@ func Information(c *gin.Context) {
 	} else {
 		// let the request pass through the scope requirer, to protect from reading
 		// the user properties of other users
-		handler := middleware.RequireScope{}.Gin("user-management", types.ScopeRead)
+		handler := middleware.RequireScope{}.Gin("user-management", commonTypes.ScopeRead)
 		handler(c)
 	}
 
-	user, err := utils.GetUser(utils.InternalID(userID))
+	user, err := utils.GetUser(types.InternalIdentifier(userID))
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
