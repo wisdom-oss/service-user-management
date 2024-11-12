@@ -96,7 +96,7 @@ func loadCertificates() {
 	// test if the certificates are already present
 	var tries int
 loadCerts:
-	certificateFile, err := os.Open(config.CertificateFilePath)
+	signingCertificate, err := os.Open(config.SigningCertificateFilePath)
 	if err != nil {
 		if tries >= 3 {
 			log.Fatal().Err(err).Msg("unable to open certificate file after three tries")
@@ -111,8 +111,23 @@ loadCerts:
 		}
 	}
 
-	defer certificateFile.Close()
-	certificateContents, err := io.ReadAll(certificateFile)
+	encryptionCertificate, err := os.Open(config.EncryptionCertificateFilePath)
+	if err != nil {
+		if tries >= 3 {
+			log.Fatal().Err(err).Msg("unable to open certificate file after three tries")
+		}
+		tries++
+		if errors.Is(err, os.ErrNotExist) {
+			err = utils.GenerateCertificates()
+			if err != nil {
+				log.Fatal().Err(err).Msg("unable to generate certificates")
+			}
+			goto loadCerts
+		}
+	}
+
+	defer signingCertificate.Close()
+	certificateContents, err := io.ReadAll(signingCertificate)
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to read certificate file")
 	}
@@ -149,8 +164,59 @@ loadCerts:
 		log.Fatal().Err(err).Msg("unable to parse public key")
 	}
 
-	resources.PublicJWK = publicKey
-	resources.PrivateJWK = privateKey
+	resources.PublicSigningKey = publicKey
+	resources.PrivateSigningKey = privateKey
+
+	defer encryptionCertificate.Close()
+	certificateContents, err = io.ReadAll(encryptionCertificate)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to read certificate file")
+	}
+	privateKeyBlock, _ = pem.Decode(certificateContents)
+	if privateKeyBlock.Type != "EC PRIVATE KEY" {
+		log.Fatal().Msg("unsupported private key type")
+	}
+
+	ecdsaPrivateKey, err = x509.ParseECPrivateKey(privateKeyBlock.Bytes)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to parse ECDSA private key")
+	}
+
+	privateKey, err = jwk.FromRaw(ecdsaPrivateKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to create jwk private key")
+	}
+
+	err = jwk.AssignKeyID(privateKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to set private key key id")
+	}
+	err = privateKey.Set(jwk.KeyUsageKey, "enc")
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to set private key usage type")
+	}
+	err = privateKey.Set(jwk.AlgorithmKey, jwa.ES256)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to set private key algorithm")
+	}
+
+	publicKey, err = jwk.PublicKeyOf(privateKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to parse public key")
+	}
+
+	resources.PublicEncryptionKey = publicKey
+	resources.PrivateEncryptionKey = privateKey
+
+	resources.KeySet = jwk.NewSet()
+	err = resources.KeySet.AddKey(resources.PublicEncryptionKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to add public encryption key to key set")
+	}
+	err = resources.KeySet.AddKey(resources.PublicSigningKey)
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to add public signing key to key set")
+	}
 
 	log.Info().Msg("loaded certificates")
 }

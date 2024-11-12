@@ -1,3 +1,4 @@
 package config
 
-const CertificateFilePath = `./.certs/cert.pem`
+const SigningCertificateFilePath = `./.certs/signing.pem`
+const EncryptionCertificateFilePath = `./.certs/encryption.pem`

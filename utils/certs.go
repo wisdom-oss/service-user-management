@@ -30,28 +30,54 @@ func GenerateCertificates() error {
 	_ = db.Redis.Set(context.Background(), "ums-is-generating-jwk", true, 0)
 	defer db.Redis.Del(context.Background(), "ums-is-generating-jwk")
 
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	privateSigningKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return err
 	}
 
-	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+	privateSigningKeyBytes, err := x509.MarshalECPrivateKey(privateSigningKey)
 	if err != nil {
 		return err
 	}
 
-	privateBlock := pem.Block{}
-	privateBlock.Type = "EC PRIVATE KEY"
-	privateBlock.Bytes = privateKeyBytes
+	privateSigningBlock := pem.Block{}
+	privateSigningBlock.Type = "EC PRIVATE KEY"
+	privateSigningBlock.Bytes = privateSigningKeyBytes
 
 	err = os.MkdirAll("./.certs", 0600)
-	certificateFile, err := os.OpenFile(config.CertificateFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
-	defer certificateFile.Close()
+	signingCertificateFile, err := os.OpenFile(config.SigningCertificateFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	defer signingCertificateFile.Close()
 	if err != nil {
 		return err
 	}
 
-	err = pem.Encode(certificateFile, &privateBlock)
+	err = pem.Encode(signingCertificateFile, &privateSigningBlock)
+	if err != nil {
+		return err
+	}
+
+	privateEncryptionKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return err
+	}
+
+	privateEncryptionKeyBytes, err := x509.MarshalECPrivateKey(privateEncryptionKey)
+	if err != nil {
+		return err
+	}
+
+	privateEncryptionBlock := pem.Block{}
+	privateEncryptionBlock.Type = "EC PRIVATE KEY"
+	privateEncryptionBlock.Bytes = privateEncryptionKeyBytes
+
+	err = os.MkdirAll("./.certs", 0600)
+	encryptionCertificateFile, err := os.OpenFile(config.EncryptionCertificateFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	defer encryptionCertificateFile.Close()
+	if err != nil {
+		return err
+	}
+
+	err = pem.Encode(encryptionCertificateFile, &privateEncryptionBlock)
 	if err != nil {
 		return err
 	}
