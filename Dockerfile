@@ -1,4 +1,4 @@
-FROM docker.io/golang:alpine AS prepare-environment
+FROM docker.io/golang:alpine AS build
 COPY . /tmp/src
 WORKDIR /tmp/src
 RUN mkdir -p /tmp/build
@@ -12,7 +12,7 @@ ARG GH_VERSION=unset
 LABEL org.opencontainers.image.source=https://github.com/$GH_REPO
 LABEL org.opencontainers.image.version=$GH_VERSION
 
-COPY --from=build-release /tmp/build/app /service
+COPY --from=build /tmp/build/app /service
 ENTRYPOINT ["/service"]
 HEALTHCHECK --interval=30s --timeout=15s CMD /service -healthcheck
 EXPOSE 8000
