@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"io/fs"
+	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/qustavo/dotsql"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 
 	"microservice/resources"
@@ -47,4 +49,15 @@ func init() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to load prepared queries")
 	}
+
+	redisUri, isSet := os.LookupEnv("REDIS_URI")
+	if !isSet {
+		l.Fatal().Msg("REDIS_URI is not set")
+	}
+	redisOptions, err := redis.ParseURL(redisUri)
+	if err != nil {
+		l.Fatal().Err(err).Msg("could not parse redis URI")
+	}
+
+	Redis = redis.NewClient(redisOptions)
 }

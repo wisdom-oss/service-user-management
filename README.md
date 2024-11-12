@@ -45,9 +45,47 @@ environment variables:
   - `OIDC_CLIENT_ID`
   - `OIDC_CLIENT_SECRET`
   - `OIDC_ISSUER`
+  - `OIDC_REDIRECT_URI` — The URI to which a request should be redirected to if it started in the frontend
 
 The required certificates are automatically generated during the initial startup
 and stored in the microservice.
 It is recommended to create a volume mount if using docker to persist the
 certificates during container recreation to ensure updates to not break already
 running sessions
+
+## Usage
+To use the User Management, just navigate to the `/login` endpoint and the 
+service automatically redirects you to the configured OIDC provider and sets
+the redirect URI according to the configuration.
+
+> [!IMPORTANT]
+> If the redirecti uri isn't the service itself, you need to take additional
+> steps to retrieve a token set. Using the built-in callback page _isn't
+> recommended_ as the flow may appear unnatural for users.
+> 
+> Read more here: [Using an external callback page](#using-an-external-callback-page-recommended)
+
+
+### With the built-in callback page
+
+>[!NOTE]
+> The built-in callback page should only be used while developing and testing
+> of the service as it may break the login flow otherwise
+
+
+The built-in callback page automatically redirects users to the token endpoint
+at which a new token set is generated and sent back.
+
+
+
+### Using an external callback page (recommended)
+If you're using an external callback page, the OIDC provider redirects the
+users to the one specified by you.
+The provider will add the following query parameters to the redirection which
+you need to request a new token set:
+  - `code`
+  - `state`
+
+Please use those query parameters and the according values and request a new
+token set using the `/token` endpoint as indicated in the 
+[api documentation](openapi.yaml)

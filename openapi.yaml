@@ -1,19 +1,306 @@
 openapi: 3.0.3
 info:
-  title: Microservice Template
-  description: Microservice Template
+  title: User Management Service
+  description: |
+    The User Management Service allows the management of external users and
+    their permissions within the WISdoM platform.
+    It uses an external OpenID Connect Provider.
   version: 1.0.0
 servers:
-  - url: 'https'
+  - url: '/api/auth/'
+    description: WISdoM Deployment
+  - url: 'http://localhost:8000'
+    description: Local Development
+
+tags:
+  - name: Session Management
+    description: |
+      Routes in this category are used to manage sessions and allow users to
+      login and log out as well as creating long-living credentials and external
+      clients
+  - name: User Management
+    description: |
+      Routes in this category are used to read and write users
+  - name: Others
+    description: |
+      Routes in this category are used for miscellaneous tasks such as discovery
+      of resources and providing resources
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - type
+        - status
+        - title
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+        status:
+          type: integer
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+        error:
+          type: string
+    AuthorizationCodeRequest:
+      type: object
+      required:
+        - grant_type
+        - code
+        - state
+      properties:
+        grant_type:
+          type: string
+        code:
+          type: string
+        state:
+          type: string
+    RefreshTokenRequest:
+      type: object
+      required:
+        - grant_type
+        - refresh_token
+      properties:
+        grant_type:
+          type: string
+        refresh_token:
+          type: string
+    ClientCredentialRequest:
+      type: object
+      required:
+        - grant_type
+        - client_id
+        - client_secret
+      properties:
+        grant_type:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i'
+          description: Internal User ID
+        externalIdentifier:
+          type: string
+          description: |
+            Externally generated user id (usually matching the `sub` claim)
+        name:
+          type: string
+          description: |
+            Full Name (as set in the external provider)
+        email:
+          type: string
+          description: |
+            E-Mail address (as set in the external provider)
+        username:
+          type: string
+          description: |
+            Username (as set in the external provider)
+        disabled:
+          type: boolean
+        administrator:
+          type: boolean
+
 paths:
-  /:
+  /.well-known/jwks.json:
     get:
+      summary: JSON Web Key Set
+      tags:
+        - Others
+      description: |
+        Retrieve the JSON Web Key Set used to validate JSON Web Tokens issued
+        by the user management
+      externalDocs:
+        description: RFC 7517 (JSON Web Key (JWK))
+        url: https://www.rfc-editor.org/rfc/rfc7517
       responses:
         200:
-          description: Hello There response
+          description: JSON Web Key Set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        kty:
+                          type: string
+                        crv:
+                          type: string
+                        x:
+                          type: string
+                        y:
+                          type: string
+                        use:
+                          type: string
+                        kid:
+                          type: string
+                        n:
+                          type: string
+                        e:
+                          type: string
+                        alg:
+                          type: string
+              example:
+                keys:
+                  - kty: EC
+                    crv: P-256
+                    x: MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4
+                    'y': 4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM
+                    use: enc
+                    kid: '1'
+                  - kty: RSA
+                    'n': >-
+                      0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw
+                    e: AQAB
+                    alg: RS256
+                    kid: '2011-04-29'
+  /login:
+    get:
+      summary: Initiate Login Process
+      tags:
+        - Session Management
+      description: |
+        Start the login process and redirect the user to the configured
+        identity provider
+      responses:
+        302:
+          description: Redirection to the identity provider
+  /callback:
+    get:
+      responses:
+        303:
+          description: A Message explaining how to gain access
           content:
             text/plain:
+
+
+
+  /token:
+    post:
+      summary: Generate Token Set
+      tags:
+        - Session Management
+      description: |
+        Exchange the authorization code for an access token
+        
+        *Important Note*: When using a refresh token to generate a new token set
+        the refresh token used in the request is automatically invalidated.
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              oneOf:
+                - $ref: '#/components/schemas/AuthorizationCodeRequest'
+                - $ref: '#/components/schemas/RefreshTokenRequest'
+                - $ref: '#/components/schemas/ClientCredentialRequest'
+              discriminator:
+                propertyName: grant_type
+                mapping:
+                  client_credentials: '#/components/schemas/ClientCredentialRequest'
+                  authorization_code: '#/components/schemas/AuthorizationCodeRequest'
+                  refresh_token: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        200:
+          description: Token Set
+          content:
+            application/json:
               schema:
-                type: string
-                pattern: '^hello there$'
-  
+                properties:
+                  access_token:
+                    type: string
+                    description: |
+                      A signed JWT containing the users information and the
+                      scopes they may access. It is signed using one of the keys
+                      available at the `/.well-known/jwks.json` endpoint
+                  expires_in:
+                    type: integer
+                    description: |
+                      Denotes the time in seconds that the access token is valid
+                  token_type:
+                    type: string
+                    enum:
+                      - bearer
+                  refresh_token:
+                    type: string
+                    description: |
+                      A signed and encrypted JWT which can be used to retrieve
+                      a new Token set, granted the refresh token has not been
+                      revoked or didn't expire.
+                      
+                      A refresh token is valid for 12h starting with the 
+                      generation on the server side.
+
+
+
+
+
+        403:
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /revoke:
+    post:
+      tags:
+        - Session Management
+      summary: Revoke Refresh Token
+      description: |
+        The user management only supports revoking a refresh token as there is
+        no way for the dependent services to know if a token has been revoked.
+        Therefore, a access token should only be stored in the session storage
+        so it automatically is removed after closing the client
+      responses:
+        200:
+          description: Token revoked sucessfully
+  /users:
+    get:
+      tags:
+        - User Management
+      summary: Get User List
+      responses:
+        200:
+          description: User List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /users/{userID}:
+    parameters:
+      - in: path
+        name: userID
+        schema:
+          pattern: '/(^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$|^me$)/mi'
+
+    get:
+      tags:
+        - User Management
+      summary: Get User Details
+      responses:
+        200:
+          description: User Details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
