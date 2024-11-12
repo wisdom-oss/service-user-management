@@ -53,7 +53,6 @@ func GenerateCertificates() error {
 	if err != nil {
 		return err
 	}
-	defer signingCertificateFile.Close()
 
 	err = pem.Encode(signingCertificateFile, &privateSigningBlock)
 	if err != nil {
