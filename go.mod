@@ -18,7 +18,7 @@ require (
 	github.com/thanhpk/randstr v1.0.6
 	github.com/wisdom-oss/common-go/v2 v2.1.1
 	github.com/wisdom-oss/go-healthcheck v1.0.2
-	golang.org/x/oauth2 v0.23.0
+	golang.org/x/oauth2 v0.24.0
 
 )
 
