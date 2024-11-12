@@ -47,6 +47,5 @@ func (u User) Permissions() map[string][]string {
 }
 
 func (u User) IsAdministrator() bool {
-	// TODO: Fill with code
-	return false
+	return u.Administrator
 }
