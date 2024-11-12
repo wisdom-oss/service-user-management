@@ -46,6 +46,11 @@ func Assign(c *gin.Context) {
 		return
 	}
 	tx, err := db.Pool.Begin(c)
+	if err != nil {
+		c.Abort()
+		_ = c.Error(err)
+		return
+	}
 
 	for _, assignment := range parameters.Assignments {
 		var service types.Service
