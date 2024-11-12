@@ -23,6 +23,13 @@ var ErrUnknownUser = types.ServiceError{
 	Detail: "The user selected for this operation is not known",
 }
 
+var ErrUserDisabled = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.4",
+	Status: 403,
+	Title:  "User Disabled",
+	Detail: "The user has been disabled.",
+}
+
 var ErrRefreshTokenInvalid = types.ServiceError{
 	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.4",
 	Status: 403,
