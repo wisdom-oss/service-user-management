@@ -15,15 +15,12 @@ import (
 	"microservice/types"
 )
 
-type ExternalID string
-type InternalID string
-
 var ErrNoUser = errors.New("no user with this id")
 
 // GetUser retrieves a User object from the database
-func GetUser[T ExternalID | InternalID](id T) (*types.User, error) {
-	externalIDType := reflect.TypeOf(ExternalID(""))
-	internalIDType := reflect.TypeOf(InternalID(""))
+func GetUser[T types.InternalIdentifier | types.ExternalIdentifier](id T) (*types.User, error) {
+	externalIDType := reflect.TypeOf(types.ExternalIdentifier(""))
+	internalIDType := reflect.TypeOf(types.InternalIdentifier(""))
 	parameterType := reflect.TypeOf(id)
 
 	var rawQuery string
