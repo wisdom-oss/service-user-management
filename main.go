@@ -56,18 +56,19 @@ func main() {
 
 	r.GET("/login", routes.InitiateLogin)
 	r.GET("/callback", routes.Callback)
-	r.GET("/token", routes.Token)
+	r.POST("/token", routes.Token)
+	r.POST("/revoke", jwtValidator.GinHandler, routes.RevokeToken)
 
 	wellKnown := r.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", routes.JWK)
 	}
 
-	userManagement := r.Group("/users", jwtValidator.GinHandler, protect.Gin("user-management", types.ScopeRead))
+	userManagement := r.Group("/users", jwtValidator.GinHandler)
 	{
-		// userManagement.PUT("/", protect.Gin("user-management", types.ScopeWrite)) // todo: write route to create new user
-		userManagement.GET("/", users.List)
 		userManagement.GET("/:userID", users.Information)
+		userManagement.GET("/", protect.Gin("user-management", types.ScopeRead), users.List)
+		// userManagement.PUT("/", protect.Gin("user-management", types.ScopeWrite)) // todo: write route to create new user
 		// userManagement.PATCH("/:userID", protect.Gin("user-management", types.ScopeWrite))   // todo: update user
 		// userManagement.DELETE("/:userID", protect.Gin("user-management", types.ScopeDelete)) // todo: delete user
 	}
