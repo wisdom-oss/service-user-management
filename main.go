@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -86,7 +87,12 @@ func main() {
 	// Set up the signal handling to allow the server to shut down gracefully
 
 	cancelSignal := make(chan os.Signal, 1)
+	cleanupSignal := make(chan os.Signal, 1)
 	signal.Notify(cancelSignal, os.Interrupt)
+	signal.Notify(cleanupSignal, os.Interrupt)
+
+	// start the refresh token cleanup
+	go cleanupRefreshTokens(cleanupSignal)
 
 	// Block further code execution until the shutdown signal was received
 	l.Info().Msg("server ready to accept connections")
@@ -96,4 +102,32 @@ func main() {
 	err = jwtValidator.Configure("user-management", "http://localhost:8000/.well-known/jwks.json", false)
 	<-cancelSignal
 
+}
+
+func cleanupRefreshTokens(sig chan os.Signal) {
+	query, err := db.Queries.Raw("cleanup-expired-tokens")
+	if err != nil {
+		log.Warn().Err(err).Msg("unable to cleanup expired refresh tokens")
+		return
+	}
+
+	ticker := time.Tick(15 * time.Second)
+	var leaveLoop = false
+	for {
+		if leaveLoop {
+			break
+		}
+		select {
+		case <-ticker:
+			_, err = db.Pool.Exec(context.Background(), query)
+			if err != nil {
+				log.Warn().Err(err).Msg("unable to cleanup expired refresh tokens")
+				continue
+			}
+			break
+		case <-sig:
+			leaveLoop = true
+			continue
+		}
+	}
 }
