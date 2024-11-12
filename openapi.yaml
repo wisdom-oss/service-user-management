@@ -8,7 +8,9 @@ info:
   version: 1.0.0
 servers:
   - url: '/api/auth/'
-    description: Default Path
+    description: WISdoM Deployment
+  - url: 'http://localhost:8000'
+    description: Local Development
 
 tags:
   - name: Session Management
@@ -16,14 +18,101 @@ tags:
       Routes in this category are used to manage sessions and allow users to
       login and log out as well as creating long-living credentials and external
       clients
-  - name: Permission Management
+  - name: User Management
     description: |
-      Routes in this category are used to grant or revoke access privileges for
-      individual services on a user basis
+      Routes in this category are used to read and write users
   - name: Others
     description: |
       Routes in this category are used for miscellaneous tasks such as discovery
       of resources and providing resources
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - type
+        - status
+        - title
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+        status:
+          type: integer
+        title:
+          type: string
+        detail:
+          type: string
+        instance:
+          type: string
+        error:
+          type: string
+    AuthorizationCodeRequest:
+      type: object
+      required:
+        - grant_type
+        - code
+        - state
+      properties:
+        grant_type:
+          type: string
+        code:
+          type: string
+        state:
+          type: string
+    RefreshTokenRequest:
+      type: object
+      required:
+        - grant_type
+        - refresh_token
+      properties:
+        grant_type:
+          type: string
+        refresh_token:
+          type: string
+    ClientCredentialRequest:
+      type: object
+      required:
+        - grant_type
+        - client_id
+        - client_secret
+      properties:
+        grant_type:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i'
+          description: Internal User ID
+        externalIdentifier:
+          type: string
+          description: |
+            Externally generated user id (usually matching the `sub` claim)
+        name:
+          type: string
+          description: |
+            Full Name (as set in the external provider)
+        email:
+          type: string
+          description: |
+            E-Mail address (as set in the external provider)
+        username:
+          type: string
+          description: |
+            Username (as set in the external provider)
+        disabled:
+          type: boolean
+        administrator:
+          type: boolean
+
 paths:
   /.well-known/jwks.json:
     get:
@@ -81,4 +170,137 @@ paths:
                     e: AQAB
                     alg: RS256
                     kid: '2011-04-29'
+  /login:
+    get:
+      summary: Initiate Login Process
+      tags:
+        - Session Management
+      description: |
+        Start the login process and redirect the user to the configured
+        identity provider
+      responses:
+        302:
+          description: Redirection to the identity provider
+  /callback:
+    get:
+      responses:
+        303:
+          description: A Message explaining how to gain access
+          content:
+            text/plain:
 
+
+
+  /token:
+    post:
+      summary: Generate Token Set
+      tags:
+        - Session Management
+      description: |
+        Exchange the authorization code for an access token
+        
+        *Important Note*: When using a refresh token to generate a new token set
+        the refresh token used in the request is automatically invalidated.
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              oneOf:
+                - $ref: '#/components/schemas/AuthorizationCodeRequest'
+                - $ref: '#/components/schemas/RefreshTokenRequest'
+                - $ref: '#/components/schemas/ClientCredentialRequest'
+              discriminator:
+                propertyName: grant_type
+                mapping:
+                  client_credentials: '#/components/schemas/ClientCredentialRequest'
+                  authorization_code: '#/components/schemas/AuthorizationCodeRequest'
+                  refresh_token: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        200:
+          description: Token Set
+          content:
+            application/json:
+              schema:
+                properties:
+                  access_token:
+                    type: string
+                    description: |
+                      A signed JWT containing the users information and the
+                      scopes they may access. It is signed using one of the keys
+                      available at the `/.well-known/jwks.json` endpoint
+                  expires_in:
+                    type: integer
+                    description: |
+                      Denotes the time in seconds that the access token is valid
+                  token_type:
+                    type: string
+                    enum:
+                      - bearer
+                  refresh_token:
+                    type: string
+                    description: |
+                      A signed and encrypted JWT which can be used to retrieve
+                      a new Token set, granted the refresh token has not been
+                      revoked or didn't expire.
+                      
+                      A refresh token is valid for 12h starting with the 
+                      generation on the server side.
+
+
+
+
+
+        403:
+          description: Forbidden
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /revoke:
+    post:
+      tags:
+        - Session Management
+      summary: Revoke Refresh Token
+      description: |
+        The user management only supports revoking a refresh token as there is
+        no way for the dependent services to know if a token has been revoked.
+        Therefore, a access token should only be stored in the session storage
+        so it automatically is removed after closing the client
+      responses:
+        200:
+          description: Token revoked sucessfully
+  /users:
+    get:
+      tags:
+        - User Management
+      summary: Get User List
+      responses:
+        200:
+          description: User List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /users/{userID}:
+    parameters:
+      - in: path
+        name: userID
+        schema:
+          pattern: '/(^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$|^me$)/mi'
+
+    get:
+      tags:
+        - User Management
+      summary: Get User Details
+      responses:
+        200:
+          description: User Details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
