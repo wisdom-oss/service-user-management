@@ -22,8 +22,10 @@ VALUES
     ($1, $2, $3, $4);
 
 -- name: delete-user
-DELETE FROM auth.users
-WHERE id = $1::uuid;
+DELETE
+FROM auth.users
+WHERE
+    id = $1::uuid;
 
 -- TOKEN RELATED QUERIES --
 
@@ -51,7 +53,8 @@ WHERE
 DELETE
 FROM auth.refresh_tokens
 WHERE
-    expires_at < NOW() OR active is not TRUE;
+    expires_at < NOW()
+    OR active IS NOT TRUE;
 
 
 -- SERVICE RELATED QUERIES --
@@ -87,3 +90,12 @@ WHERE
 INSERT INTO auth.permission_assignments(user_id, service, level)
 VALUES
     ($1, $2, $3)
+ON CONFLICT DO NOTHING;
+
+-- name: remove-permission
+DELETE
+FROM auth.permission_assignments
+WHERE
+    user_id = $1::uuid
+    AND service = $2::uuid
+    AND level = $3::auth.scope_level;
