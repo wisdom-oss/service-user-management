@@ -79,12 +79,17 @@ func Assign(c *gin.Context) {
 			return
 		}
 	}
-	response := struct {
-		types.User
-		Permissions map[string][]string `json:"permissions"`
-	}{
-		User:        *user,
-		Permissions: user.Permissions(),
+
+	user, err = utils.GetUser(types.InternalIdentifier(parameters.UserID))
+	if err != nil {
+		c.Abort()
+		if err == utils.ErrNoUser {
+			errors.ErrUnknownUser.Emit(c)
+		} else {
+			_ = c.Error(err)
+		}
+		return
 	}
-	c.JSON(200, response)
+
+	c.JSON(200, user)
 }
