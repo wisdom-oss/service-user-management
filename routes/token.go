@@ -84,7 +84,7 @@ func Token(c *gin.Context) {
 	}
 
 	tokenBuilder := jwt.NewBuilder()
-	tokenBuilder.Expiration(time.Now().Add(time.Minute * 120))
+	tokenBuilder.Expiration(time.Now().Add(time.Minute * 15))
 	tokenBuilder.NotBefore(time.Now())
 	tokenBuilder.Subject(user.GetID())
 	tokenBuilder.Audience(TokenAudiences)
