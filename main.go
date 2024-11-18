@@ -18,6 +18,7 @@ import (
 	"microservice/internal/db"
 	"microservice/internal/errors"
 	"microservice/routes"
+	"microservice/routes/permissions"
 	"microservice/routes/users"
 )
 
@@ -44,7 +45,7 @@ func main() {
 	jwtValidator := middleware.JWTValidator{}
 	protect := middleware.RequireScope{}
 	requireRead := protect.Gin("user-management", types.ScopeRead)
-	//requireWrite := protect.Gin("user-management", types.ScopeWrite)
+	requireWrite := protect.Gin("user-management", types.ScopeWrite)
 	requireDelete := protect.Gin("user-management", types.ScopeDelete)
 
 	r := gin.New()
@@ -74,6 +75,12 @@ func main() {
 		userManagement.GET("/", requireRead, users.List)
 		// userManagement.PATCH("/:userID", protect.Gin("user-management", types.ScopeWrite))   // todo: update user
 		userManagement.DELETE("/:userID", requireDelete, users.Delete) // todo: delete user
+	}
+
+	permissionManagement := r.Group("/permissions", jwtValidator.GinHandler)
+	{
+		permissionManagement.PATCH("/assign", requireWrite, permissions.Assign)
+		permissionManagement.PATCH("/delete", requireDelete, permissions.Delete)
 	}
 
 	l.Info().Msg("finished service configuration")
