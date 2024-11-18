@@ -112,6 +112,19 @@ components:
           type: boolean
         administrator:
           type: boolean
+        permissions:
+          additionalProperties:
+            description: |
+              The name of the service that the user has access to
+            type: array
+            items:
+              description: Level of access
+              type: string
+              enum:
+                - read
+                - write
+                - delete
+                - admin
 
 paths:
   /.well-known/jwks.json:
