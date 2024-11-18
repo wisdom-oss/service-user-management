@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/go-jose/go-jose/v4/json"
 
 	"microservice/internal/db"
 )
@@ -63,5 +64,5 @@ func (u User) MarshalJSON() ([]byte, error) {
 		User:        u,
 		Permissions: u.Permissions(),
 	}
-	return nil, nil
+	return json.Marshal(o)
 }
