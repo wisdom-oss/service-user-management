@@ -81,12 +81,7 @@ func validateOIDCEnvironment() {
 		log.Fatal().Msg("OIDC_ISSUER environment variable not set")
 	}
 
-	redirectUri, isSet := os.LookupEnv("OIDC_REDIRECT_URI")
-	if !isSet {
-		log.Fatal().Msg("OIDC_REDIRECT_URI environment variable not set")
-	}
-
-	err := oidc.ExternalProvider.Configure(issuer, clientID, clientSecret, redirectUri)
+	err := oidc.ExternalProvider.Configure(issuer, clientID, clientSecret, "")
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to configure external OIDC provider information")
 	}

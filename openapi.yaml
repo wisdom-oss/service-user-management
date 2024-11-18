@@ -173,6 +173,11 @@ paths:
   /login:
     get:
       summary: Initiate Login Process
+      parameters:
+        - in: query
+          required: true
+          name: redirect_uri
+          description: Redirection URI used by the IDP
       tags:
         - Session Management
       description: |

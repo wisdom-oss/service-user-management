@@ -31,13 +31,8 @@ func (p *externalProvider) Configure(issuer string, clientID string, clientSecre
 		return errors.New("empty clientSecret")
 	}
 
-	if strings.TrimSpace(redirectURI) == "" {
-		return errors.New("empty redirectURI")
-	}
-
 	p.ClientID = clientID
 	p.ClientSecret = clientSecret
-	p.RedirectURL = redirectURI
 	p.Scopes = []string{oidc.ScopeOpenID, "profile", "email"}
 
 	var err error
