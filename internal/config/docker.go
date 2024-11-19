@@ -9,9 +9,13 @@
 package config
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/wisdom-oss/common-go/v2/middleware"
+
+	apiErrors "microservice/internal/errors"
 )
 import "github.com/gin-contrib/logger"
 import "github.com/gin-contrib/requestid"
