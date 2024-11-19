@@ -9,9 +9,13 @@
 package config
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/wisdom-oss/common-go/v2/middleware"
+
+	apiErrors "microservice/internal/errors"
 )
 import "github.com/gin-contrib/logger"
 import "github.com/gin-contrib/requestid"
@@ -34,4 +38,22 @@ func Middlewares() []gin.HandlerFunc {
 	middlewares = append(middlewares, middleware.ErrorHandler{}.Gin)
 	middlewares = append(middlewares, gin.CustomRecovery(middleware.RecoveryHandler))
 	return middlewares
+}
+
+func PrepareRouter() *gin.Engine {
+	router := gin.New()
+	router.ForwardedByClientIP = true
+	router.HandleMethodNotAllowed = true
+	_ = router.SetTrustedProxies(nil)
+	router.Use(Middlewares()...)
+
+	router.NoMethod(func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusMethodNotAllowed, apiErrors.MethodNotAllowed)
+	})
+	router.NoRoute(func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusNotFound, apiErrors.NotFound)
+
+	})
+
+	return router
 }

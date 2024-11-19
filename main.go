@@ -2,21 +2,23 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+
 	"github.com/wisdom-oss/common-go/v2/middleware"
 	"github.com/wisdom-oss/common-go/v2/types"
 	healthcheckServer "github.com/wisdom-oss/go-healthcheck/server"
+	"golang.org/x/sync/errgroup"
 
 	"microservice/internal"
 	"microservice/internal/config"
 	"microservice/internal/db"
-	"microservice/internal/errors"
 	"microservice/routes"
 	"microservice/routes/permissions"
 	"microservice/routes/users"
@@ -48,28 +50,20 @@ func main() {
 	requireWrite := protect.Gin("user-management", types.ScopeWrite)
 	requireDelete := protect.Gin("user-management", types.ScopeDelete)
 
-	r := gin.New()
-	r.HandleMethodNotAllowed = true
-	r.Use(config.Middlewares()...)
-	r.NoMethod(func(c *gin.Context) {
-		c.AbortWithStatusJSON(http.StatusMethodNotAllowed, errors.MethodNotAllowed)
-	})
-	r.NoRoute(func(c *gin.Context) {
-		c.AbortWithStatusJSON(http.StatusNotFound, errors.NotFound)
+	service := config.PrepareRouter()
 
-	})
+	service.GET("/login", routes.InitiateLogin)
+	service.GET("/callback", routes.Callback)
+	service.POST("/token", routes.Token)
+	service.POST("/revoke", jwtValidator.GinHandler, routes.RevokeToken)
 
-	r.GET("/login", routes.InitiateLogin)
-	r.GET("/callback", routes.Callback)
-	r.POST("/token", routes.Token)
-	r.POST("/revoke", jwtValidator.GinHandler, routes.RevokeToken)
-
-	wellKnown := r.Group("/.well-known")
+	wellKnown := service.Group("/.well-known")
 	{
 		wellKnown.GET("/jwks.json", routes.JWK)
+		wellKnown.GET("/openid-configuration", routes.OpenIDConfiguration)
 	}
 
-	userManagement := r.Group("/users", jwtValidator.GinHandler)
+	userManagement := service.Group("/users", jwtValidator.GinHandler)
 	{
 		userManagement.GET("/:userID", users.Information)
 		userManagement.GET("/", requireRead, users.List)
@@ -77,28 +71,33 @@ func main() {
 		userManagement.DELETE("/:userID", requireDelete, users.Delete) // todo: delete user
 	}
 
-	permissionManagement := r.Group("/permissions", jwtValidator.GinHandler)
+	permissionManagement := service.Group("/permissions", jwtValidator.GinHandler)
 	{
 		permissionManagement.PATCH("/assign", requireWrite, permissions.Assign)
 		permissionManagement.PATCH("/delete", requireDelete, permissions.Delete)
 	}
 
-	l.Info().Msg("finished service configuration")
-	l.Info().Msg("starting http server")
+	externalServer := &http.Server{
+		Addr:    config.ListenAddress,
+		Handler: service,
+	}
+
+	var g errgroup.Group
 
 	// Start the server and log errors that happen while running it
-	go func() {
-		if err := r.Run(config.ListenAddress); err != nil {
-			l.Fatal().Err(err).Msg("An error occurred while starting the http server")
+	g.Go(func() error {
+		err := externalServer.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatal().Err(err).Msg("unable to run http server")
 		}
-	}()
+		return err
+	})
 
 	// Set up the signal handling to allow the server to shut down gracefully
-
 	cancelSignal := make(chan os.Signal, 1)
 	cleanupSignal := make(chan os.Signal, 1)
-	signal.Notify(cancelSignal, os.Interrupt)
-	signal.Notify(cleanupSignal, os.Interrupt)
+	signal.Notify(cancelSignal, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(cancelSignal, syscall.SIGINT, syscall.SIGTERM)
 
 	// start the refresh token cleanup
 	go cleanupRefreshTokens(cleanupSignal)
@@ -112,7 +111,21 @@ func main() {
 	if err != nil {
 		l.Fatal().Err(err).Msg("An error occurred while configuring the JWT Validator")
 	}
+
 	<-cancelSignal
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = externalServer.Shutdown(ctx)
+	if err != nil {
+		l.Fatal().Err(err).Msg("An error occurred while shutting down http server")
+	}
+
+	if err := g.Wait(); err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			l.Fatal().Err(err).Msg("An error occurred while executing servers")
+		}
+	}
 
 }
 

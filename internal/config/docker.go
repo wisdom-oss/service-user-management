@@ -41,3 +41,20 @@ func Middlewares() []gin.HandlerFunc {
 
 	return middlewares
 }
+
+func PrepareRouter() *gin.Engine {
+	router := gin.New()
+	router.ForwardedByClientIP = true
+	_ = router.SetTrustedProxies([]string{"172.16.31.4"})
+	router.Use(Middlewares()...)
+
+	router.NoMethod(func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusMethodNotAllowed, apiErrors.MethodNotAllowed)
+	})
+	router.NoRoute(func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusNotFound, apiErrors.NotFound)
+
+	})
+
+	return router
+}
