@@ -3,7 +3,7 @@ COPY . /tmp/src
 WORKDIR /tmp/src
 RUN mkdir -p /tmp/build
 RUN go mod download -x
-RUN go build -x -tags docker,jsoniter -o /tmp/build/app
+RUN go build -x -tags=docker,nomsgpack,go_json -ldflags "-w -s" -o /tmp/build/app
 
 FROM docker.io/alpine:latest
 
