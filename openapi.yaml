@@ -393,7 +393,7 @@ paths:
                           - read
                           - write
                           - delete
-                          - *
+                          - '*'
       responses:
         200:
           description: Permissions Assigned successfully
