@@ -124,7 +124,7 @@ components:
                 - read
                 - write
                 - delete
-                - admin
+                - '*'
 
 paths:
   /.well-known/jwks.json:
@@ -273,16 +273,15 @@ paths:
                       A refresh token is valid for 12h starting with the 
                       generation on the server side.
 
-
-
-
-
         403:
           description: Forbidden
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+
+
   /revoke:
     post:
       operationId: revoke-refresh-token
@@ -439,7 +438,7 @@ paths:
                           - read
                           - write
                           - delete
-                          - *
+                          - '*'
       responses:
         200:
           description: Permissions Assigned successfully
