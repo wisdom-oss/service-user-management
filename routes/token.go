@@ -179,7 +179,7 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 	if strings.TrimSpace(tokenRequest.Code) == "" || strings.TrimSpace(tokenRequest.State) == "" {
 		c.Abort()
 		errors.ErrMissingParameter.Emit(c)
-		return
+		return nil
 	}
 
 	// now exchange the code for a token
