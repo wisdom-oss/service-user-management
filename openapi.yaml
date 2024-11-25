@@ -12,6 +12,8 @@ servers:
   - url: 'http://localhost:8000'
     description: Local Development
 
+
+
 tags:
   - name: Session Management
     description: |
@@ -27,6 +29,13 @@ tags:
       of resources and providing resources
 
 components:
+  securitySchemes:
+    WISdoM:
+      description: |
+        Access Tokens issued by this service
+      type: openIdConnect
+      openIdConnectUrl: /api/auth/.well-known/openid-configuration
+
   schemas:
     ErrorResponse:
       type: object
@@ -184,6 +193,7 @@ paths:
                     e: AQAB
                     alg: RS256
                     kid: '2011-04-29'
+  
   /login:
     get:
       operationId: start-login
@@ -203,9 +213,13 @@ paths:
       responses:
         302:
           description: Redirection to the identity provider
+  
   /callback:
     get:
       operationId: show-token-help
+      summary: Callback Help Page
+      tags:
+        - Others
       responses:
         303:
           description: A Message explaining how to gain access
@@ -213,9 +227,6 @@ paths:
             text/plain:
               schema:
                 type: string
-
-
-
   /token:
     post:
       operationId: generate-token-set
@@ -262,6 +273,7 @@ paths:
                   token_type:
                     type: string
                     pattern: '/^bearer$/i'
+                    example: bearer
                   refresh_token:
                     type: string
                     description: |
@@ -278,8 +290,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-
 
   /revoke:
     post:
@@ -305,9 +315,13 @@ paths:
       responses:
         200:
           description: Token revoked sucessfully
+
   /users:
     get:
       operationId: user-list
+      security:
+        - WISdoM: ["user-management:read"]
+      
       tags:
         - User Management
       summary: Get User List
@@ -320,6 +334,23 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+
+  /users/me:
+    get:
+      operationId: own-user-information
+      tags:
+        - User Management
+      summary: Get User Details
+      responses:
+        200:
+          description: User Details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
   /users/{userID}:
     parameters:
       - in: path
@@ -330,6 +361,9 @@ paths:
 
     get:
       operationId: user-information
+      security:
+        - WISdoM:
+          - user-management:read
       tags:
         - User Management
       summary: Get User Details
@@ -344,6 +378,9 @@ paths:
                   $ref: '#/components/schemas/User'
     delete:
       operationId: user-delete
+      security:
+        - WISdoM:
+          - user-management:delete
       tags:
         - User Management
       summary: Delete User
@@ -360,6 +397,9 @@ paths:
   /permissions/assign:
     patch:
       operationId: assign-permissions-to-user
+      security:
+        - WISdoM:
+          - user-management:write
       tags:
         - User Management
       summary: Assign Permissions to User
@@ -404,6 +444,9 @@ paths:
   /permissions/delete:
     patch:
       operationId: remove-permissions-from-user
+      security:
+        - WISdoM:
+          - user-management:write
       tags:
         - User Management
       summary: Remove Permissions from User
