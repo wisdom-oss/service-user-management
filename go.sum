@@ -32,6 +32,8 @@ github.com/gabriel-vasile/mimetype v1.4.6 h1:3+PzJTKLkvgjeTbts6msPJt4DixhT4YtFNf
 github.com/gabriel-vasile/mimetype v1.4.6/go.mod h1:JX1qVKqZd40hUPpAfiNTe0Sne7hdfKSbOqqmkq8GCXc=
 github.com/georgysavva/scany/v2 v2.1.3 h1:Zd4zm/ej79Den7tBSU2kaTDPAH64suq4qlQdhiBeGds=
 github.com/georgysavva/scany/v2 v2.1.3/go.mod h1:fqp9yHZzM/PFVa3/rYEC57VmDx+KDch0LoqrJzkvtos=
+github.com/gin-contrib/location v1.0.1 h1:jvRTI1OnbssvN5gfhZfJoCcfRl5TryBh6hVWSifJfYw=
+github.com/gin-contrib/location v1.0.1/go.mod h1:ekHwW1ahklUMaOv7riu6Wyyn0bCkxQdWf3EQWwVIcs0=
 github.com/gin-contrib/logger v1.2.0 h1:KH4Bar7EE14zIlhhzTHsQPRT7ORRQViCDeOKG5TVLTk=
 github.com/gin-contrib/logger v1.2.0/go.mod h1:rnKyuw7yiX3T3aoXiNOkeylnkBkY5qiRFuVd71P11IA=
 github.com/gin-contrib/requestid v1.0.3 h1:NB6SF0Te4Ikn8mW2K4tegpm2WGuB3bWj4wnWaM4oSAA=
