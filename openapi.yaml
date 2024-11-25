@@ -261,8 +261,7 @@ paths:
                       Denotes the time in seconds that the access token is valid
                   token_type:
                     type: string
-                    enum:
-                      - bearer
+                    pattern: '/^bearer$/i'
                   refresh_token:
                     type: string
                     description: |
