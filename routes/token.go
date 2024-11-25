@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -174,6 +175,12 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 
 	tokenParams := types.LoginParameters{}
 	json.Unmarshal(params, &tokenParams)
+
+	if strings.TrimSpace(tokenRequest.Code) == "" || strings.TrimSpace(tokenRequest.State) == "" {
+		c.Abort()
+		errors.ErrMissingParameter.Emit(c)
+		return
+	}
 
 	// now exchange the code for a token
 	token, err := oidc.ExternalProvider.Exchange(c, tokenRequest.Code, oauth2.VerifierOption(tokenParams.CodeVerifier), oauth2.SetAuthURLParam("state", tokenRequest.State), oauth2.SetAuthURLParam("redirect_uri", tokenParams.RedirectUri))
