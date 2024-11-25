@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/go-jose/go-jose/v4/json"
 
 	"microservice/internal/db"
 )
@@ -54,7 +55,14 @@ func (u User) IsActive() bool {
 	return !u.Disabled
 }
 
-type ExtendedUser struct {
-	User
-	Permissions map[string][]string `json:"permissions"`
+func (u User) MarshalJSON() ([]byte, error) {
+	type output struct {
+		User
+		Permissions map[string][]string `json:"permissions"`
+	}
+	o := output{
+		User:        u,
+		Permissions: u.Permissions(),
+	}
+	return json.Marshal(o)
 }

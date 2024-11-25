@@ -17,6 +17,8 @@ type Service struct {
 	SupportedScopes []string `json:"supportedScopes" db:"supported_scope_levels"`
 }
 
+var ErrUnknownService = errors.New("unknown service")
+
 func (s Service) LoadFromDB(identifier any) (err error) {
 	var query string
 	switch identifier.(type) {
@@ -36,7 +38,7 @@ func (s Service) LoadFromDB(identifier any) (err error) {
 	err = pgxscan.Get(context.Background(), db.Pool, &s, query, identifier.(string))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return errors.New("unknown service")
+			return errors.Join(ErrUnknownService, err)
 		}
 		return err
 	}

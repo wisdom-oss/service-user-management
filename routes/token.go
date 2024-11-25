@@ -1,8 +1,10 @@
 package routes
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -48,11 +50,11 @@ func Token(c *gin.Context) {
 	switch tokenRequest.GrantType {
 	case "client_credentials":
 		// TODO: Handle client credentials
-		user = checkClientCredentials(c, tokenRequest)
+		user = checkClientCredentials(c, tokenRequest) // todo: fully implement client credentials
 	case "authorization_code":
 		user = exchangeAuthorizationCode(c, tokenRequest)
 	case "refresh_token":
-		issueFromRefreshToken(c, tokenRequest)
+		user = issueFromRefreshToken(c, tokenRequest)
 	}
 
 	if c.IsAborted() {
@@ -79,8 +81,12 @@ func Token(c *gin.Context) {
 		}
 	}
 
+	if user.IsAdministrator() {
+		permissions = append(permissions, "*:*")
+	}
+
 	tokenBuilder := jwt.NewBuilder()
-	tokenBuilder.Expiration(time.Now().Add(time.Minute * 120))
+	tokenBuilder.Expiration(time.Now().Add(time.Minute * 15))
 	tokenBuilder.NotBefore(time.Now())
 	tokenBuilder.Subject(user.GetID())
 	tokenBuilder.Audience(TokenAudiences)
@@ -119,7 +125,6 @@ func Token(c *gin.Context) {
 		return
 	}
 
-	// TODO: reactivate refresh token if storing and validation are successful
 	serializer.Encrypt(jwt.WithKey(jwa.ECDH_ES, resources.PublicSigningKey))
 	serializedRefreshToken, err := serializer.Serialize(refreshToken)
 	if err != nil {
@@ -161,15 +166,24 @@ func checkClientCredentials(c *gin.Context, tokenRequest TokenRequest) interface
 
 func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interfaces.PermissionableObject {
 	// retrieve the verifier from the database
-	verifier, err := db.Redis.Get(c, tokenRequest.State).Result()
+	params, err := db.Redis.Get(c, tokenRequest.State).Bytes()
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
 		return nil
 	}
 
+	tokenParams := types.LoginParameters{}
+	json.Unmarshal(params, &tokenParams)
+
+	if strings.TrimSpace(tokenRequest.Code) == "" || strings.TrimSpace(tokenRequest.State) == "" {
+		c.Abort()
+		errors.ErrMissingParameter.Emit(c)
+		return
+	}
+
 	// now exchange the code for a token
-	token, err := oidc.ExternalProvider.Exchange(c, tokenRequest.Code, oauth2.VerifierOption(verifier), oauth2.SetAuthURLParam("state", tokenRequest.State))
+	token, err := oidc.ExternalProvider.Exchange(c, tokenRequest.Code, oauth2.VerifierOption(tokenParams.CodeVerifier), oauth2.SetAuthURLParam("state", tokenRequest.State), oauth2.SetAuthURLParam("redirect_uri", tokenParams.RedirectUri))
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
@@ -194,12 +208,14 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 	user, err = utils.GetUser(types.ExternalIdentifier(idToken.Subject))
 	if err != nil {
 		if err == utils.ErrNoUser {
-			user, err = utils.CreateUser(token)
+			newUser, err := utils.CreateUser(idToken.Subject, token)
 			if err != nil {
+				fmt.Println("error while creating user")
 				c.Abort()
 				_ = c.Error(err)
 				return nil
 			}
+			return newUser
 		}
 		c.Abort()
 		_ = c.Error(err)
@@ -212,7 +228,7 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 // issueFromRefreshToken is the only function that issues tokens directly as
 // a user can only gain access to the scopes already present while generating
 // the refresh token
-func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) {
+func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) interfaces.PermissionableObject {
 	decryptedRefreshToken, err := jwe.Decrypt(
 		[]byte(tokenRequest.RefreshToken),
 		jwe.WithKey(jwa.ECDH_ES, resources.PrivateSigningKey),
@@ -220,7 +236,7 @@ func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) {
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
-		return
+		return nil
 	}
 
 	grantingRefreshToken, err := jwt.Parse(decryptedRefreshToken,
@@ -231,14 +247,14 @@ func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) {
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
-		return
+		return nil
 	}
 
 	query, err := db.Queries.Raw("check-for-refresh-token")
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
-		return
+		return nil
 	}
 
 	var tokenAlive bool
@@ -246,97 +262,38 @@ func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) {
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
-		return
+		return nil
 	}
 
 	if !tokenAlive {
 		c.Abort()
 		errors.ErrRefreshTokenInvalid.Emit(c)
-		return
-	}
-
-	tokenBuilder := jwt.NewBuilder()
-	tokenBuilder.Expiration(time.Now().Add(time.Minute * 120))
-	tokenBuilder.NotBefore(time.Now())
-	tokenBuilder.Subject(grantingRefreshToken.Subject())
-	tokenBuilder.Audience(TokenAudiences)
-	tokenBuilder.Issuer(TokenIssuer)
-	tokenBuilder.Claim("scopes", grantingRefreshToken.PrivateClaims()["scopes"])
-
-	token, err := tokenBuilder.Build()
-	if err != nil {
-		c.Abort()
-		_ = c.Error(err)
-		return
-	}
-
-	serializer := jwt.NewSerializer()
-	serializer.Sign(jwt.WithKey(resources.PrivateSigningKey.Algorithm(), resources.PrivateSigningKey))
-	serializedToken, err := serializer.Serialize(token)
-	if err != nil {
-		c.Abort()
-		_ = c.Error(err)
-		return
-	}
-
-	refreshTokenBuilder := jwt.NewBuilder()
-	refreshTokenBuilder.Expiration(time.Now().Add(time.Hour * 12))
-	refreshTokenBuilder.NotBefore(time.Now())
-	refreshTokenBuilder.Subject(grantingRefreshToken.Subject())
-	refreshTokenBuilder.Issuer(TokenIssuer)
-	refreshTokenBuilder.Audience(TokenAudiences)
-	refreshTokenBuilder.Claim("scopes", grantingRefreshToken.PrivateClaims()["scopes"])
-	refreshTokenBuilder.JwtID(randstr.Base62(128))
-	refreshToken, err := refreshTokenBuilder.Build()
-	if err != nil {
-		c.Abort()
-		_ = c.Error(err)
-		return
-	}
-
-	serializer.Encrypt(jwt.WithKey(jwa.ECDH_ES_A256KW, resources.PublicSigningKey))
-	serializedRefreshToken, err := serializer.Serialize(refreshToken)
-	if err != nil {
-		c.Abort()
-		_ = c.Error(err)
-		return
-	}
-
-	res := types.TokenResponse{
-		AccessToken:  string(serializedToken),
-		ExpiresIn:    int(math.Ceil(token.Expiration().Sub(time.Now()).Seconds())),
-		TokenType:    "Bearer",
-		RefreshToken: string(serializedRefreshToken),
-	}
-
-	query, err = db.Queries.Raw("register-refresh-token")
-	if err != nil {
-		_ = c.Error(err)
-		res.RefreshToken = ""
-		goto output
-	}
-
-	_, err = db.Pool.Exec(c, query, refreshToken.JwtID(), refreshToken.Expiration())
-	if err != nil {
-		res.RefreshToken = ""
-		_ = c.Error(err)
-		goto output
+		return nil
 	}
 
 	query, err = db.Queries.Raw("revoke-refresh-token")
 	if err != nil {
+		c.Abort()
 		_ = c.Error(err)
-		res.RefreshToken = ""
-		goto output
 	}
 
 	_, err = db.Pool.Exec(c, query, grantingRefreshToken.JwtID())
 	if err != nil {
-		res.RefreshToken = ""
+		c.Abort()
 		_ = c.Error(err)
-		goto output
 	}
 
-output:
-	c.JSON(200, res)
+	var user *types.User
+	user, err = utils.GetUser(types.InternalIdentifier(grantingRefreshToken.Subject()))
+	if err != nil {
+		if err == utils.ErrNoUser {
+			return nil
+		}
+		c.Abort()
+		_ = c.Error(err)
+		return nil
+	}
+
+	return user
+
 }

@@ -36,3 +36,17 @@ var ErrRefreshTokenInvalid = types.ServiceError{
 	Title:  "Invalid Refresh Token",
 	Detail: "The refresh token is either expired or has been revoked",
 }
+
+var ErrBadService = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.1",
+	Status: 400,
+	Title:  "Unknown Service",
+	Detail: "The service provided in the request is unknown",
+}
+
+var ErrUnknownService = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5",
+	Status: 404,
+	Title:  "Unknown Service",
+	Detail: "The service provided in the request is unknown",
+}

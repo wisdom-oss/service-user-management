@@ -50,7 +50,7 @@ func GetUser[T types.InternalIdentifier | types.ExternalIdentifier](id T) (*type
 	return &user, nil
 }
 
-func CreateUser(token *oauth2.Token) (*types.User, error) {
+func CreateUser(subject string, token *oauth2.Token) (*types.User, error) {
 	req, err := http.NewRequest("GET", oidc2.OidcProvider.UserInfoEndpoint(), nil)
 	if err != nil {
 		return nil, err
@@ -73,5 +73,15 @@ func CreateUser(token *oauth2.Token) (*types.User, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	query, err := db.Queries.Raw("create-user")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.Pool.Exec(context.Background(), query, subject, desiredUserInformation.Name, desiredUserInformation.Username, desiredUserInformation.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	return GetUser(types.ExternalIdentifier(subject))
 }

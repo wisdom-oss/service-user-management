@@ -1,20 +1,16 @@
 package permissions
 
 import (
-	"errors"
-
 	"github.com/gin-gonic/gin"
 	commonTypes "github.com/wisdom-oss/common-go/v2/types"
 
 	"microservice/internal/db"
-	apiErrors "microservice/internal/errors"
+	"microservice/internal/errors"
 	"microservice/types"
 	"microservice/utils"
 )
 
-// Assign only creates new permission assignments and doesn't modify existing
-// ones
-func Assign(c *gin.Context) {
+func Delete(c *gin.Context) {
 	var parameters struct {
 		UserID      string `json:"user" binding:"required"`
 		Assignments []struct {
@@ -24,7 +20,7 @@ func Assign(c *gin.Context) {
 	}
 	err := c.BindJSON(&parameters)
 	if err != nil {
-		res := apiErrors.ErrMissingParameter
+		res := errors.ErrMissingParameter
 		res.Errors = []error{err}
 		res.Emit(c)
 		return
@@ -33,20 +29,21 @@ func Assign(c *gin.Context) {
 	user, err := utils.GetUser(types.InternalIdentifier(parameters.UserID))
 	if err != nil {
 		c.Abort()
-		if errors.Is(err, utils.ErrNoUser) {
-			apiErrors.ErrUnknownUser.Emit(c)
+		if err == utils.ErrNoUser {
+			errors.ErrUnknownUser.Emit(c)
 		} else {
 			_ = c.Error(err)
 		}
 		return
 	}
 
-	query, err := db.Queries.Raw("assign-permission")
+	query, err := db.Queries.Raw("remove-permission")
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
 		return
 	}
+
 	tx, err := db.Pool.Begin(c)
 	if err != nil {
 		c.Abort()
@@ -59,9 +56,6 @@ func Assign(c *gin.Context) {
 		err = service.LoadFromDB(types.ExternalIdentifier(assignment.Service))
 		if err != nil {
 			c.Abort()
-			if errors.Is(err, types.ErrUnknownService) {
-				apiErrors.ErrBadService.Emit(c)
-			}
 			tx.Rollback(c)
 			_ = c.Error(err)
 			return
@@ -72,7 +66,7 @@ func Assign(c *gin.Context) {
 		if err != nil {
 			c.Abort()
 			tx.Rollback(c)
-			apiErrors.ErrInvalidScope.Emit(c)
+			errors.ErrInvalidScope.Emit(c)
 			return
 		}
 
@@ -85,16 +79,4 @@ func Assign(c *gin.Context) {
 		}
 	}
 
-	user, err = utils.GetUser(types.InternalIdentifier(parameters.UserID))
-	if err != nil {
-		c.Abort()
-		if errors.Is(err, utils.ErrNoUser) {
-			apiErrors.ErrUnknownUser.Emit(c)
-		} else {
-			_ = c.Error(err)
-		}
-		return
-	}
-
-	c.JSON(200, user)
 }
