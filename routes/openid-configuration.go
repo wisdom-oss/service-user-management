@@ -30,7 +30,7 @@ func OpenIDConfiguration(c *gin.Context) {
 	}
 	scopes = append(scopes, "*:*")
 	c.JSON(200, gin.H{
-		"issuer":                                path.Clean(fmt.Sprintf("%s/%s", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
+		"issuer":                                "user-management",
 		"authorization_endpoint":                path.Clean(fmt.Sprintf("%s/%s/login", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
 		"token_endpoint":                        path.Clean(fmt.Sprintf("%s/%s/token", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
 		"userinfo_endpoint":                     path.Clean(fmt.Sprintf("%s/%s/users/me", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
