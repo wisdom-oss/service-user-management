@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -164,15 +165,18 @@ func checkClientCredentials(c *gin.Context, tokenRequest TokenRequest) interface
 
 func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interfaces.PermissionableObject {
 	// retrieve the verifier from the database
-	verifier, err := db.Redis.Get(c, tokenRequest.State).Result()
+	params, err := db.Redis.Get(c, tokenRequest.State).Bytes()
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
 		return nil
 	}
 
+	tokenParams := types.LoginParameters{}
+	json.Unmarshal(params, &tokenParams)
+
 	// now exchange the code for a token
-	token, err := oidc.ExternalProvider.Exchange(c, tokenRequest.Code, oauth2.VerifierOption(verifier), oauth2.SetAuthURLParam("state", tokenRequest.State))
+	token, err := oidc.ExternalProvider.Exchange(c, tokenRequest.Code, oauth2.VerifierOption(tokenParams.CodeVerifier), oauth2.SetAuthURLParam("state", tokenRequest.State), oauth2.SetAuthURLParam("redirect_uri", tokenParams.RedirectUri))
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
@@ -199,6 +203,7 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 		if err == utils.ErrNoUser {
 			newUser, err := utils.CreateUser(idToken.Subject, token)
 			if err != nil {
+				fmt.Println("error while creating user")
 				c.Abort()
 				_ = c.Error(err)
 				return nil
