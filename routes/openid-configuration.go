@@ -6,9 +6,9 @@ import (
 	"microservice/internal/db"
 	"microservice/types"
 	"path"
-	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,24 +30,17 @@ func OpenIDConfiguration(c *gin.Context) {
 		}
 	}
 
-	proto := "http://"
-	if c.Request.TLS != nil {
-		proto = "https://"
-		goto outputOIDCConfig
-	}
-
-	if forwardedProto := strings.TrimSpace(c.Request.Header.Get("X-Forwarded-Proto")); forwardedProto != "" {
-		proto = forwardedProto + "://"
-	}
-
-outputOIDCConfig:
 	scopes = append(scopes, "*:*")
+
+	url := location.Get(c)
+	pathPrefix := c.Request.Header.Get("X-Forwarded-Prefix")
+
 	c.JSON(200, gin.H{
 		"issuer":                                "user-management",
-		"authorization_endpoint":                proto + path.Clean(fmt.Sprintf("%s/%s/login", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
-		"token_endpoint":                        proto + path.Clean(fmt.Sprintf("%s/%s/token", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
-		"userinfo_endpoint":                     proto + path.Clean(fmt.Sprintf("%s/%s/users/me", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
-		"jwks_uri":                              proto + path.Clean(fmt.Sprintf("%s/%s/.well-known/jwks.json", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
+		"authorization_endpoint":                fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/login", url.Host, pathPrefix))),
+		"token_endpoint":                        fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/token", url.Host, pathPrefix))),
+		"userinfo_endpoint":                     fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/users/me", url.Host, pathPrefix))),
+		"jwks_uri":                              fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/.well-known/jwks.json", url.Host, pathPrefix))),
 		"scopes_supported":                      scopes,
 		"id_token_signing_alg_values_supported": []string{"none"},
 		"response_types_supported":              []string{"token"},
