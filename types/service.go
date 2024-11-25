@@ -13,7 +13,7 @@ import (
 type Service struct {
 	ID              string   `json:"id" db:"id"`
 	Name            string   `json:"name" db:"name"`
-	Description     string   `json:"description" db:"description"`
+	Description     *string  `json:"description" db:"description"`
 	SupportedScopes []string `json:"supportedScopes" db:"supported_scope_levels"`
 }
 
