@@ -6,6 +6,7 @@ import (
 	"microservice/internal/db"
 	"microservice/types"
 	"path"
+	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
@@ -28,13 +29,25 @@ func OpenIDConfiguration(c *gin.Context) {
 			scopes = append(scopes, fmt.Sprintf("%s:%s", service.Name, scope))
 		}
 	}
+
+	proto := "http://"
+	if c.Request.TLS != nil {
+		proto = "https://"
+		goto outputOIDCConfig
+	}
+
+	if forwardedProto := strings.TrimSpace(c.Request.Header.Get("X-Forwarded-Proto")); forwardedProto != "" {
+		proto = forwardedProto + "://"
+	}
+
+outputOIDCConfig:
 	scopes = append(scopes, "*:*")
 	c.JSON(200, gin.H{
 		"issuer":                                "user-management",
-		"authorization_endpoint":                path.Clean(fmt.Sprintf("%s/%s/login", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
-		"token_endpoint":                        path.Clean(fmt.Sprintf("%s/%s/token", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
-		"userinfo_endpoint":                     path.Clean(fmt.Sprintf("%s/%s/users/me", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
-		"jwks_uri":                              path.Clean(fmt.Sprintf("%s/%s/.well-known/jwks.json", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
+		"authorization_endpoint":                proto + path.Clean(fmt.Sprintf("%s/%s/login", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
+		"token_endpoint":                        proto + path.Clean(fmt.Sprintf("%s/%s/token", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
+		"userinfo_endpoint":                     proto + path.Clean(fmt.Sprintf("%s/%s/users/me", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
+		"jwks_uri":                              proto + path.Clean(fmt.Sprintf("%s/%s/.well-known/jwks.json", c.Request.Host, c.Request.Header.Get("X-Forwarded-Prefix"))),
 		"scopes_supported":                      scopes,
 		"id_token_signing_alg_values_supported": []string{"none"},
 		"response_types_supported":              []string{"token"},
