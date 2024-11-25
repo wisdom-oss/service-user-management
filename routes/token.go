@@ -197,12 +197,13 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 	user, err = utils.GetUser(types.ExternalIdentifier(idToken.Subject))
 	if err != nil {
 		if err == utils.ErrNoUser {
-			user, err = utils.CreateUser(token)
+			newUser, err := utils.CreateUser(idToken.Subject, token)
 			if err != nil {
 				c.Abort()
 				_ = c.Error(err)
 				return nil
 			}
+			return newUser
 		}
 		c.Abort()
 		_ = c.Error(err)
