@@ -16,9 +16,10 @@ import (
 	"github.com/wisdom-oss/common-go/v2/middleware"
 
 	apiErrors "microservice/internal/errors"
+
+	"github.com/gin-contrib/logger"
+	"github.com/gin-contrib/requestid"
 )
-import "github.com/gin-contrib/logger"
-import "github.com/gin-contrib/requestid"
 
 const ListenAddress = "0.0.0.0:8000"
 
@@ -49,7 +50,7 @@ func Middlewares() []gin.HandlerFunc {
 func PrepareRouter() *gin.Engine {
 	router := gin.New()
 	router.ForwardedByClientIP = true
-	_ = router.SetTrustedProxies([]string{"172.16.31.4"})
+	_ = router.SetTrustedProxies([]string{"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"})
 	router.Use(Middlewares()...)
 
 	router.NoMethod(func(c *gin.Context) {
