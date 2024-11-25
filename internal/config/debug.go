@@ -17,7 +17,6 @@ import (
 
 	apiErrors "microservice/internal/errors"
 
-	"github.com/gin-contrib/location"
 	"github.com/gin-contrib/logger"
 	"github.com/gin-contrib/requestid"
 )
@@ -45,7 +44,6 @@ func Middlewares() []gin.HandlerFunc {
 func PrepareRouter() *gin.Engine {
 	router := gin.New()
 	router.HandleMethodNotAllowed = true
-	router.Use(location.Default())
 	router.Use(Middlewares()...)
 
 	router.NoMethod(func(c *gin.Context) {

@@ -8,7 +8,6 @@ import (
 	"path"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/gin-contrib/location"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,15 +31,22 @@ func OpenIDConfiguration(c *gin.Context) {
 
 	scopes = append(scopes, "*:*")
 
-	url := location.Get(c)
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
+	}
+	if proxiedScheme := c.Request.Header.Get("X-Forwarded-Proto"); proxiedScheme != "" {
+		scheme = proxiedScheme
+	}
+
 	pathPrefix := c.Request.Header.Get("X-Forwarded-Prefix")
 
 	c.JSON(200, gin.H{
 		"issuer":                                "user-management",
-		"authorization_endpoint":                fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/login", url.Host, pathPrefix))),
-		"token_endpoint":                        fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/token", url.Host, pathPrefix))),
-		"userinfo_endpoint":                     fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/users/me", url.Host, pathPrefix))),
-		"jwks_uri":                              fmt.Sprintf("%s://%s", url.Scheme, path.Clean(fmt.Sprintf("%s/%s/.well-known/jwks.json", url.Host, pathPrefix))),
+		"authorization_endpoint":                fmt.Sprintf("%s://%s", scheme, path.Clean(fmt.Sprintf("%s/%s/login", c.Request.Host, pathPrefix))),
+		"userinfo_endpoint":                     fmt.Sprintf("%s://%s", scheme, path.Clean(fmt.Sprintf("%s/%s/users/me", c.Request.Host, pathPrefix))),
+		"token_endpoint":                        fmt.Sprintf("%s://%s", scheme, path.Clean(fmt.Sprintf("%s/%s/token", c.Request.Host, pathPrefix))),
+		"jwks_uri":                              fmt.Sprintf("%s://%s", scheme, path.Clean(fmt.Sprintf("%s/%s/.well-known/jwks.json", c.Request.Host, pathPrefix))),
 		"scopes_supported":                      scopes,
 		"id_token_signing_alg_values_supported": []string{"none"},
 		"response_types_supported":              []string{"token"},

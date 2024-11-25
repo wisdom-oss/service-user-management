@@ -17,7 +17,6 @@ import (
 
 	apiErrors "microservice/internal/errors"
 
-	"github.com/gin-contrib/location"
 	"github.com/gin-contrib/logger"
 	"github.com/gin-contrib/requestid"
 )
@@ -42,7 +41,6 @@ func Middlewares() []gin.HandlerFunc {
 		}),
 	))
 
-	middlewares = append(middlewares, location.Default())
 	middlewares = append(middlewares, requestid.New())
 	middlewares = append(middlewares, middleware.ErrorHandler{}.Gin)
 	middlewares = append(middlewares, gin.CustomRecovery(middleware.RecoveryHandler))
