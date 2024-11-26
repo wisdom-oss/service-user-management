@@ -27,6 +27,19 @@ FROM auth.users
 WHERE
     id = $1::uuid;
 
+
+-- CLIENT-RELATED QUERIES --
+
+-- name: get-clients
+SELECT *
+FROM auth.clients;
+
+-- name: get-client:
+SELECT *
+FROM auth.clients
+WHERE id = $1;
+
+
 -- TOKEN RELATED QUERIES --
 
 -- name: check-for-refresh-token
