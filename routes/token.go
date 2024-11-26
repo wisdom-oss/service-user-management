@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwe"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -17,7 +19,7 @@ import (
 
 	"microservice/interfaces"
 	"microservice/internal/db"
-	"microservice/internal/errors"
+	apiErrors "microservice/internal/errors"
 	"microservice/oidc"
 	"microservice/resources"
 	"microservice/types"
@@ -69,7 +71,7 @@ func Token(c *gin.Context) {
 
 	if !user.IsActive() {
 		c.Abort()
-		errors.ErrUserDisabled.Emit(c)
+		apiErrors.ErrUserDisabled.Emit(c)
 		return
 	}
 
@@ -161,7 +163,46 @@ output:
 }
 
 func checkClientCredentials(c *gin.Context, tokenRequest TokenRequest) interfaces.PermissionableObject {
-	return nil
+	clientID := strings.TrimSpace(tokenRequest.ClientID)
+	clientSecret := strings.TrimSpace(tokenRequest.ClientSecret)
+
+	if clientID == "" || clientSecret == "" {
+		c.Abort()
+		apiErrors.ErrMissingParameter.Emit(c)
+		return nil
+	}
+
+	query, err := db.Queries.Raw("get-client")
+	if err != nil {
+		c.Abort()
+		_ = c.Error(err)
+		return nil
+	}
+
+	var client types.Client
+	err = pgxscan.Get(c, db.Pool, &client, query, clientID)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			c.Abort()
+			apiErrors.ErrInvalidClientCredentials.Emit(c)
+			return nil
+		}
+		c.Abort()
+		_ = c.Error(err)
+		return nil
+	}
+
+	err = client.ReadPermissions(clientID, clientSecret)
+	if err != nil {
+		if errors.Is(err, types.ErrInvalidSubject) {
+			c.Abort()
+			apiErrors.ErrInvalidClientCredentials.Emit(c)
+		}
+		c.Abort()
+		_ = c.Error(err)
+		return nil
+	}
+	return client
 }
 
 func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interfaces.PermissionableObject {
@@ -178,7 +219,7 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 
 	if strings.TrimSpace(tokenRequest.Code) == "" || strings.TrimSpace(tokenRequest.State) == "" {
 		c.Abort()
-		errors.ErrMissingParameter.Emit(c)
+		apiErrors.ErrMissingParameter.Emit(c)
 		return nil
 	}
 
@@ -267,7 +308,7 @@ func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) interfaces
 
 	if !tokenAlive {
 		c.Abort()
-		errors.ErrRefreshTokenInvalid.Emit(c)
+		apiErrors.ErrRefreshTokenInvalid.Emit(c)
 		return nil
 	}
 
