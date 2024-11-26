@@ -50,3 +50,10 @@ var ErrUnknownService = types.ServiceError{
 	Title:  "Unknown Service",
 	Detail: "The service provided in the request is unknown",
 }
+
+var ErrInvalidClientCredentials = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 401,
+	Title:  "Invalid Client Credentials",
+	Detail: "The supplied client credentials are not valid",
+}
