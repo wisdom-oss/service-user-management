@@ -4,7 +4,7 @@ WORKDIR /src
 COPY --link go.* .
 RUN --mount=type=cache,target=/root/.cache/go-build go mod download
 COPY --link . .
-RUN --mount=type=cache,target=/root/.cache/go-build go build -tags=docker,nomsgpack,go_json -o /service .
+RUN --mount=type=cache,target=/root/.cache/go-build go build -ldflags='-w -s' -tags=docker,nomsgpack,go_json -o /service .
 
 FROM docker.io/alpine:latest
 
