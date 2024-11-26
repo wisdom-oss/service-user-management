@@ -20,6 +20,7 @@ import (
 	"microservice/internal/config"
 	"microservice/internal/db"
 	"microservice/routes"
+	"microservice/routes/clients"
 	"microservice/routes/permissions"
 	"microservice/routes/users"
 )
@@ -75,6 +76,12 @@ func main() {
 	{
 		permissionManagement.PATCH("/assign", requireWrite, permissions.Assign)
 		permissionManagement.PATCH("/delete", requireDelete, permissions.Delete)
+	}
+
+	clientManagement := service.Group("/clients", jwtValidator.GinHandler)
+	{
+		clientManagement.POST("/", requireWrite, clients.Create)
+		clientManagement.DELETE("/:clientID", requireDelete, clients.Delete)
 	}
 
 	externalServer := &http.Server{

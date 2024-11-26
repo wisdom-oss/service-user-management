@@ -57,3 +57,24 @@ var ErrInvalidClientCredentials = types.ServiceError{
 	Title:  "Invalid Client Credentials",
 	Detail: "The supplied client credentials are not valid",
 }
+
+var ErrInvalidClientScopeRequested = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 400,
+	Title:  "Unsupported Client Scope Requested",
+	Detail: "At least one of the requested scope is not supported for client credentials",
+}
+
+var ErrPermissionMismatch = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 400,
+	Title:  "Permission Mismatch",
+	Detail: "Assigning scopes outside of the permission scope of the current user is not supported",
+}
+
+var ErrInvalidClientID = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 400,
+	Title:  "Invalid Client ID Format",
+	Detail: "Invalid Client ID provided. Please ensure you used an UUIDv4",
+}

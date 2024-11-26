@@ -127,7 +127,7 @@ func Token(c *gin.Context) {
 		return
 	}
 
-	serializer.Encrypt(jwt.WithKey(jwa.ECDH_ES, resources.PublicSigningKey))
+	serializer.Encrypt(jwt.WithKey(jwa.ECDH_ES, resources.PublicEncryptionKey))
 	serializedRefreshToken, err := serializer.Serialize(refreshToken)
 	if err != nil {
 		c.Abort()
@@ -272,7 +272,7 @@ func exchangeAuthorizationCode(c *gin.Context, tokenRequest TokenRequest) interf
 func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) interfaces.PermissionableObject {
 	decryptedRefreshToken, err := jwe.Decrypt(
 		[]byte(tokenRequest.RefreshToken),
-		jwe.WithKey(jwa.ECDH_ES, resources.PrivateSigningKey),
+		jwe.WithKey(jwa.ECDH_ES, resources.PrivateEncryptionKey),
 	)
 	if err != nil {
 		c.Abort()
