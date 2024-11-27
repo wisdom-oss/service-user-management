@@ -32,7 +32,7 @@ var ErrUserDisabled = types.ServiceError{
 
 var ErrRefreshTokenInvalid = types.ServiceError{
 	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.4",
-	Status: 403,
+	Status: 401,
 	Title:  "Invalid Refresh Token",
 	Detail: "The refresh token is either expired or has been revoked",
 }

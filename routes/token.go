@@ -276,7 +276,7 @@ func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) interfaces
 	)
 	if err != nil {
 		c.Abort()
-		_ = c.Error(err)
+		apiErrors.ErrRefreshTokenInvalid.Emit(c)
 		return nil
 	}
 
