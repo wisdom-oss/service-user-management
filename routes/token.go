@@ -286,13 +286,8 @@ func issueFromRefreshToken(c *gin.Context, tokenRequest TokenRequest) interfaces
 		jwt.WithKey(resources.PublicSigningKey.Algorithm(), resources.PublicSigningKey),
 	)
 	if err != nil {
-		if jwt.IsValidationError(err) {
-			c.Abort()
-			apiErrors.ErrRefreshTokenInvalid.Emit(c)
-			return nil
-		}
 		c.Abort()
-		_ = c.Error(err)
+		apiErrors.ErrRefreshTokenInvalid.Emit(c)
 		return nil
 	}
 
