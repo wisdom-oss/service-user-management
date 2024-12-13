@@ -141,7 +141,7 @@ func Token(c *gin.Context) {
 
 	res := types.TokenResponse{
 		AccessToken:  string(serializedToken),
-		ExpiresIn:    int(math.Ceil(token.Expiration().Sub(time.Now()).Seconds())),
+		ExpiresIn:    int(math.Ceil(time.Until(token.Expiration()).Seconds())),
 		TokenType:    "Bearer",
 		RefreshToken: string(serializedRefreshToken),
 	}
