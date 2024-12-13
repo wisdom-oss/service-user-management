@@ -87,6 +87,10 @@ func Token(c *gin.Context) {
 		permissions = append(permissions, "*:*")
 	}
 
+	if len(permissions) == 0 {
+		permissions = []string{}
+	}
+
 	tokenBuilder := jwt.NewBuilder()
 	tokenBuilder.Expiration(time.Now().Add(time.Minute * 15))
 	tokenBuilder.NotBefore(time.Now())
