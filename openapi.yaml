@@ -239,6 +239,7 @@ paths:
             text/plain:
               schema:
                 type: string
+
   /token:
     post:
       operationId: generate-token-set
