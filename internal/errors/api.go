@@ -32,7 +32,49 @@ var ErrUserDisabled = types.ServiceError{
 
 var ErrRefreshTokenInvalid = types.ServiceError{
 	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.4",
-	Status: 403,
+	Status: 401,
 	Title:  "Invalid Refresh Token",
 	Detail: "The refresh token is either expired or has been revoked",
+}
+
+var ErrBadService = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.1",
+	Status: 400,
+	Title:  "Unknown Service",
+	Detail: "The service provided in the request is unknown",
+}
+
+var ErrUnknownService = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5",
+	Status: 404,
+	Title:  "Unknown Service",
+	Detail: "The service provided in the request is unknown",
+}
+
+var ErrInvalidClientCredentials = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 401,
+	Title:  "Invalid Client Credentials",
+	Detail: "The supplied client credentials are not valid",
+}
+
+var ErrInvalidClientScopeRequested = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 400,
+	Title:  "Unsupported Client Scope Requested",
+	Detail: "At least one of the requested scope is not supported for client credentials",
+}
+
+var ErrPermissionMismatch = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 400,
+	Title:  "Permission Mismatch",
+	Detail: "Assigning scopes outside of the permission scope of the current user is not supported",
+}
+
+var ErrInvalidClientID = types.ServiceError{
+	Type:   "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.2",
+	Status: 400,
+	Title:  "Invalid Client ID Format",
+	Detail: "Invalid Client ID provided. Please ensure you used an UUIDv4",
 }

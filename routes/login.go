@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/thanhpk/randstr"
@@ -10,6 +12,7 @@ import (
 	"microservice/internal/db"
 	"microservice/internal/errors"
 	"microservice/oidc"
+	"microservice/types"
 )
 
 func InitiateLogin(c *gin.Context) {
@@ -25,13 +28,17 @@ func InitiateLogin(c *gin.Context) {
 	}
 	// generate a new state for this login
 	state := randstr.Base62(32)
-	verifier := randstr.Base62(128)
-	err = db.Redis.Set(c, state, verifier, 0).Err()
+	tokenParams := types.LoginParameters{}
+	tokenParams.RedirectUri = parameters.RedirectUri
+	tokenParams.CodeVerifier = randstr.Base62(128)
+
+	params, _ := json.Marshal(tokenParams)
+	err = db.Redis.Set(c, state, params, 5*time.Minute).Err()
 
 	if err != nil {
 		c.Abort()
 		_ = c.Error(err)
 		return
 	}
-	c.Redirect(http.StatusFound, oidc.ExternalProvider.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier), oauth2.SetAuthURLParam("redirect_uri", parameters.RedirectUri)))
+	c.Redirect(http.StatusFound, oidc.ExternalProvider.AuthCodeURL(state, oauth2.S256ChallengeOption(tokenParams.CodeVerifier), oauth2.SetAuthURLParam("redirect_uri", parameters.RedirectUri)))
 }

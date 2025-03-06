@@ -7,9 +7,9 @@ info:
     It uses an external OpenID Connect Provider.
   version: 1.0.0
 servers:
-  - url: '/api/auth/'
-    description: WISdoM Deployment
-  - url: 'http://localhost:8000'
+  - url: "/api/auth/"
+    description: Deployment
+  - url: "http://localhost:8000"
     description: Local Development
 
 tags:
@@ -21,12 +21,23 @@ tags:
   - name: User Management
     description: |
       Routes in this category are used to read and write users
+  - name: Client Management
+    description: |
+      Create external clients which are allowed to access the APIs in the WISdoM
+      architecture.
   - name: Others
     description: |
       Routes in this category are used for miscellaneous tasks such as discovery
       of resources and providing resources
 
 components:
+  securitySchemes:
+    WISdoM:
+      description: |
+        Access Tokens issued by this service
+      type: openIdConnect
+      openIdConnectUrl: /api/auth/.well-known/openid-configuration
+
   schemas:
     ErrorResponse:
       type: object
@@ -90,7 +101,7 @@ components:
       properties:
         id:
           type: string
-          pattern: '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i'
+          format: uuid
           description: Internal User ID
         externalIdentifier:
           type: string
@@ -102,6 +113,7 @@ components:
             Full Name (as set in the external provider)
         email:
           type: string
+          format: email
           description: |
             E-Mail address (as set in the external provider)
         username:
@@ -112,10 +124,32 @@ components:
           type: boolean
         administrator:
           type: boolean
+        permissions:
+          example:
+            - user-management:
+              - read
+              - write
+            - example-service:
+              - read
+              - delete
+              - '*'
+          additionalProperties:
+            description: |
+              The name of the service that the user has access to
+            type: array
+            items:
+              description: Level of access
+              type: string
+              enum:
+                - read
+                - write
+                - delete
+                - "*"
 
 paths:
   /.well-known/jwks.json:
     get:
+      operationId: get-jwks
       summary: JSON Web Key Set
       tags:
         - Others
@@ -161,23 +195,28 @@ paths:
                   - kty: EC
                     crv: P-256
                     x: MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4
-                    'y': 4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM
+                    "y": 4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM
                     use: enc
-                    kid: '1'
+                    kid: "1"
                   - kty: RSA
-                    'n': >-
+                    "n": >-
                       0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw
                     e: AQAB
                     alg: RS256
-                    kid: '2011-04-29'
+                    kid: "2011-04-29"
+
   /login:
     get:
+      operationId: start-login
       summary: Initiate Login Process
       parameters:
         - in: query
           required: true
           name: redirect_uri
           description: Redirection URI used by the IDP
+          schema:
+            type: string
+            format: uri
       tags:
         - Session Management
       description: |
@@ -186,8 +225,13 @@ paths:
       responses:
         302:
           description: Redirection to the identity provider
+
   /callback:
     get:
+      operationId: show-token-help
+      summary: Callback Help Page
+      tags:
+        - Others
       responses:
         303:
           description: A Message explaining how to gain access
@@ -196,16 +240,15 @@ paths:
               schema:
                 type: string
 
-
-
   /token:
     post:
+      operationId: generate-token-set
       summary: Generate Token Set
       tags:
         - Session Management
       description: |
         Exchange the authorization code for an access token
-        
+
         *Important Note*: When using a refresh token to generate a new token set
         the refresh token used in the request is automatically invalidated.
       requestBody:
@@ -214,15 +257,15 @@ paths:
             schema:
               type: object
               oneOf:
-                - $ref: '#/components/schemas/AuthorizationCodeRequest'
-                - $ref: '#/components/schemas/RefreshTokenRequest'
-                - $ref: '#/components/schemas/ClientCredentialRequest'
+                - $ref: "#/components/schemas/AuthorizationCodeRequest"
+                - $ref: "#/components/schemas/RefreshTokenRequest"
+                - $ref: "#/components/schemas/ClientCredentialRequest"
               discriminator:
                 propertyName: grant_type
                 mapping:
-                  client_credentials: '#/components/schemas/ClientCredentialRequest'
-                  authorization_code: '#/components/schemas/AuthorizationCodeRequest'
-                  refresh_token: '#/components/schemas/RefreshTokenRequest'
+                  client_credentials: "#/components/schemas/ClientCredentialRequest"
+                  authorization_code: "#/components/schemas/AuthorizationCodeRequest"
+                  refresh_token: "#/components/schemas/RefreshTokenRequest"
       responses:
         200:
           description: Token Set
@@ -232,40 +275,41 @@ paths:
                 properties:
                   access_token:
                     type: string
+                    pattern: (^[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*$)
                     description: |
                       A signed JWT containing the users information and the
                       scopes they may access. It is signed using one of the keys
                       available at the `/.well-known/jwks.json` endpoint
                   expires_in:
                     type: integer
+                    example: 900
                     description: |
                       Denotes the time in seconds that the access token is valid
                   token_type:
                     type: string
-                    enum:
-                      - bearer
+                    pattern: "/^bearer$/i"
+                    example: bearer
                   refresh_token:
                     type: string
+                    pattern: (^[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*$)
                     description: |
                       A signed and encrypted JWT which can be used to retrieve
                       a new Token set, granted the refresh token has not been
                       revoked or didn't expire.
-                      
+
                       A refresh token is valid for 12h starting with the 
                       generation on the server side.
-
-
-
-
 
         403:
           description: Forbidden
           content:
             application/problem+json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
+
   /revoke:
     post:
+      operationId: revoke-refresh-token
       tags:
         - Session Management
       summary: Revoke Refresh Token
@@ -274,11 +318,26 @@ paths:
         no way for the dependent services to know if a token has been revoked.
         Therefore, a access token should only be stored in the session storage
         so it automatically is removed after closing the client
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+
       responses:
         200:
           description: Token revoked sucessfully
+
   /users:
     get:
+      operationId: user-list
+      security:
+        - WISdoM: ["user-management:read"]
+
       tags:
         - User Management
       summary: Get User List
@@ -290,15 +349,11 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
-  /users/{userID}:
-    parameters:
-      - in: path
-        name: userID
-        schema:
-          pattern: '/(^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$|^me$)/mi'
+                  $ref: "#/components/schemas/User"
 
+  /users/me:
     get:
+      operationId: own-user-information
       tags:
         - User Management
       summary: Get User Details
@@ -310,4 +365,211 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: "#/components/schemas/User"
+
+  /users/{userID}:
+    parameters:
+      - in: path
+        required: true
+        name: userID
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      operationId: user-information
+      security:
+        - WISdoM:
+            - user-management:read
+      tags:
+        - User Management
+      summary: Get User Details
+      responses:
+        200:
+          description: User Details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    delete:
+      operationId: user-delete
+      security:
+        - WISdoM:
+            - user-management:delete
+      tags:
+        - User Management
+      summary: Delete User
+      description: |
+        Delete a user from the database. This will delete the user and will
+        withdraw all permissions. However, the deletion will not hinder a user
+        logging in again and creating a new account.
+        To stop this behavior you need to disallow the user from using the
+        application in your identity provider.
+      responses:
+        204:
+          description: User Deleted
+
+  /permissions/assign:
+    patch:
+      operationId: assign-permissions-to-user
+      security:
+        - WISdoM:
+            - user-management:write
+      tags:
+        - User Management
+      summary: Assign Permissions to User
+      description: |
+        The user is assigned a permission only once, so specifying it multiple
+        times will not have any effect on whether or not they can access
+        the resources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                  format: uuid
+                assignments:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        type: string
+                        format: uuid
+                      scope:
+                        type: string
+                        enum:
+                          - read
+                          - write
+                          - delete
+                          - "*"
+      responses:
+        200:
+          description: Permissions Assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /permissions/delete:
+    patch:
+      operationId: remove-permissions-from-user
+      security:
+        - WISdoM:
+            - user-management:write
+      tags:
+        - User Management
+      summary: Remove Permissions from User
+      description: |
+        The permissions will be removed instantly. If the user still has a valid
+        access token the permissions are still available for the user.
+        If the user tries to use the refresh token to generate a new access
+        token, the permissions will be dropped during the creation of the new
+        token set
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                  format: uuid
+                assignments:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service:
+                        type: string
+                        format: uuid
+                      scope:
+                        type: string
+                        enum:
+                          - read
+                          - write
+                          - delete
+                          - "*"
+      responses:
+        200:
+          description: Permissions Assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /clients:
+    post:
+      summary: Create New Client
+      operationId: create-client-credentials
+      tags:
+        - Client Management
+      security:
+        - WISdoM: ["user-management:read"]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - contactName
+                - contactEmail
+                - scopes
+              type: object
+              properties:
+                name:
+                  type: string
+                contactName:
+                  type: string
+                contactEmail:
+                  type: string
+                  format: email
+                scopes:
+                  type: array
+                  description: |
+                    The scopes the client is allowed to access when retrieving
+                    an access token at the token endpoint
+                  example:
+                    - "user-management:read"
+                    - "user-management:write"
+                  items:
+                    type: string
+      responses:
+        201:
+          description: New Client Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientID:
+                    type: string
+                    format: uuid
+                  clientSecret:
+                    type: string
+                    pattern: (^[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*\.[A-Za-z0-9-_]*$)
+
+  /clients/{clientID}:
+    parameters:
+      - in: path
+        name: clientID
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    delete:
+      summary: Delete Client
+      tags:
+        - Client Management 
+      responses:
+        204:
+          description: Client deleted 
+
