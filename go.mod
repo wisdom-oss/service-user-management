@@ -14,7 +14,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx/v2 v2.1.2
 	github.com/qustavo/dotsql v1.2.0
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.7.3
 	github.com/rs/zerolog v1.33.0
 	github.com/thanhpk/randstr v1.0.6
 	github.com/wisdom-oss/common-go/v2 v2.2.0
